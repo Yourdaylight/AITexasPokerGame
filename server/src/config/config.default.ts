@@ -97,7 +97,7 @@ export default (appInfo: MidwayAppInfo) => {
     redis: {
       host: '127.0.0.1',
       port: 6379,
-      password: '123456',
+      password: '98765432',
     },
   };
 
@@ -105,7 +105,7 @@ export default (appInfo: MidwayAppInfo) => {
     client: {
       port: 6379,
       host: '127.0.0.1',
-      password: '123456',
+      password: '98765432',
       db: 0,
     },
   };
@@ -113,7 +113,7 @@ export default (appInfo: MidwayAppInfo) => {
   config.mysql = {
     client: {
       // host
-      host: '127.0.0.1',
+      host: '192.168.1.6',
       // pot
       port: '3306',
       // userName

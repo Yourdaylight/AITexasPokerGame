@@ -6,7 +6,7 @@
         <div class="input-bd">
           <div class="input-name">
             <span>buy in:&nbsp;</span>
-            <input type="number" v-model="value" disabled />
+            <input type="number" v-model="value" />
           </div>
         </div>
         <div class="btn"><span @click="buyIn">buy in</span></div>
