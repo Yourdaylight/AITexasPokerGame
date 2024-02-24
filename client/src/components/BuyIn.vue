@@ -6,10 +6,13 @@
         <div class="input-bd">
           <div class="input-name">
             <span>buy in:&nbsp;</span>
-            <input type="number" v-model="value" />
+            <input v-model="value" />
           </div>
         </div>
-        <div class="btn"><span @click="buyIn">buy in</span></div>
+        <div class="btn"><span @click="buyIn">Buy in💴</span></div>
+        <div class="hint-text small-gray">
+          游戏开始后，筹码小于 {{maxBuyInFactor}} 的一半时才可买入.
+        </div>
       </div>
     </div>
   </Transition>
@@ -18,7 +21,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import range from './Range.vue';
-
+import { MaxBuyInFactor} from '@/utils/constant';
 @Component({
   components: {
     range,
@@ -27,6 +30,7 @@ import range from './Range.vue';
 export default class BuyIn extends Vue {
   @Prop() public showBuyIn!: boolean;
   @Prop() public value!: any;
+  public maxBuyInFactor = MaxBuyInFactor;
 
   public closeBuyIn() {
     this.$emit('update:showBuyIn', false);
@@ -85,5 +89,9 @@ export default class BuyIn extends Vue {
   .btn {
     margin-top: 20px;
   }
+  .small-gray {
+  color: gray;
+  font-size: 0.8em;
+}
 }
 </style>

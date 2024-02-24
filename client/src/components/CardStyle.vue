@@ -45,9 +45,9 @@ export default class CardStyle extends Vue {
       case 's':
         return 'black';
       case 'c':
-        return 'green';
+        return 'black';
       case 'd':
-        return 'blue';
+        return 'red';
     }
   }
 }

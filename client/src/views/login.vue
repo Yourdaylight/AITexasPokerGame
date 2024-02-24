@@ -1,7 +1,7 @@
 <template>
   <div class="login-container container">
     <div class="login-body">
-      <div class="name">D Z P</div>
+      <div class="name">神教竞技</div>
       <div class="user-name input-bd">
         <div class="input-name iconfont icon-account"></div>
         <div class="input-text">
@@ -43,6 +43,7 @@ export default class Login extends Vue {
       const { token } = result.data;
       cookie.set('token', token, { expires: 1 });
       localStorage.setItem('token', token);
+      localStorage.setItem('userAccount', this.userAccount);
       await this.$router.push({ name: 'home' });
     } catch (e) {
       this.$plugin.toast('Wrong password or account.');

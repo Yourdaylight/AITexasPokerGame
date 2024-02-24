@@ -30,7 +30,7 @@
         {{ latestSpecialActionMsg }}
       </animation>
       <div class="game-body">
-        <div class="pot">pot: {{ pot }}</div>
+        <div class="pot">pot: {{ pot }}(Max:{{ maxPot }})</div>
         <div class="roomId">No.:{{ roomId }}</div>
         <div class="btn play" v-show="isOwner && !isPlay">
           <span @click="play">play game</span>
@@ -50,6 +50,7 @@
       :min-action-size="minActionSize"
       :is-two-player="gamePlayers.length === 2"
       :pot="pot"
+      :maxPot="maxPot"
       :audio-status="audioStatus"
       :prev-size="prevSize"
       @action="action"
@@ -144,7 +145,7 @@ interface ILatestActionData {
 }
 
 const GAME_BASE_SIZE = 1;
-const ACTION_TIME = 30;
+const ACTION_TIME = 60;
 
 @Component({
   components: {
@@ -205,6 +206,13 @@ export default class Game extends Vue {
     return this.sitList.filter((s) => s.player && s.player.status === 1);
   }
 
+  get allPlayers() {
+    if (!this.isPlay) {
+      return [];
+    }
+    return this.sitList.filter((s) => s.player && s.player.status != null);
+  }
+
   get hasSit() {
     return !!this.sitList.find((s) => s.player && s.player.userId === this.currPlayer?.userId);
   }
@@ -227,10 +235,11 @@ export default class Game extends Vue {
   }
 
   get buyInSize() {
-    if (this.currentCounter <= this.baseSize * 2) {
+    if (this.currentCounter <= MaxBuyInFactor / 2) {
       return this.baseSize * MaxBuyInFactor;
+    }else{
+      return 0;
     }
-    return 0;
   }
 
   get latestSpecialAction() {
@@ -271,6 +280,8 @@ export default class Game extends Vue {
   public handCard = [];
   public commonCard = [];
   public pot = 0;
+  public maxPot = 0;
+  public maxPerPlayer = 500;
   public slidePots = [];
   public prevSize = 0;
   public winner: IPlayer[][] = [];
@@ -314,6 +325,8 @@ export default class Game extends Vue {
       const player = players.find((p) => sit.player && p.userId === sit.player.userId && sit.player.counter > 0);
       return Object.assign({}, {}, { player, position: sit.position }) as ISit;
     });
+    //求单局最大筹码数，为玩家总数*500
+    this.maxPot = this.allPlayers.length * this.maxPerPlayer;
     this.initSitLink();
   }
 
@@ -718,10 +731,9 @@ export default class Game extends Vue {
   ) {
     buyInSize = Number(buyInSize);
     if (buyInSize <= 0) {
-      this.$plugin.toast('靓仔, 买个鸡春做咩啊');
+      this.$plugin.toast('买入金额不能为0，买入失败！');
       return;
     }
-
     try {
       this.showMsg = true;
       this.msg = this.hasSit && this.isPlay ? `已补充买入 ${buyInSize}, 下局生效` : `已补充买入 ${buyInSize}`;
@@ -759,6 +771,7 @@ export default class Game extends Vue {
       this.gaming = true;
       this.emit('playGame');
     } else {
+      this.$plugin.toast("no enough player");
       console.log('no enough player');
     }
   }

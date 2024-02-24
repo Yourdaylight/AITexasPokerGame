@@ -1,6 +1,9 @@
 <template>
   <div class="home-container container">
     <div class="room-btn" v-show="isHome">
+      <div class="welcome-message">
+      Have a good day, {{ userAccount }}!
+      </div>
       <div class="room-config" v-show="showRoomConfig">
         <div class="room-config-shadow" @click="showRoomConfig = false"></div>
         <div class="room-config-body">
@@ -105,6 +108,9 @@ export default class Home extends Vue {
     await this.getRooms();
   }
 
+  get userAccount() {
+    return localStorage.getItem('userAccount') || 'Please Login!';
+  }
   public async createRoom() {
     try {
       const result = await service.createRoom(this.isShort, this.smallBlind, 0);

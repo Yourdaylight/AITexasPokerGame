@@ -41,9 +41,9 @@ export default class Card extends Vue {
       case 's':
         return { black: true };
       case 'c':
-        return { green: true };
+        return { black: true };
       case 'd':
-        return { blue: true };
+        return { red: true };
     }
   }
 

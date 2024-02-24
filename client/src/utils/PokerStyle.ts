@@ -22,29 +22,29 @@ interface IPokerStyle {
 }
 
 enum PokerStyleEnum {
-  'ROYAL_FlUSH',
-  'STRAIGHT_FLUSH',
-  'FOUR_KIND',
-  'FULL_HOUSE',
-  'FLUSH',
-  'STRAIGHT',
-  'THREE_KIND',
-  'TWO_PAIR',
-  'PAIR',
-  'HIGH_CARD',
+  'ROYAL_FlUSH(皇家同花顺)',
+  'STRAIGHT_FLUSH(同花顺)',
+  'FOUR_KIND(四条)',
+  'FULL_HOUSE(葫芦)',
+  'FLUSH(同花)',
+  'STRAIGHT(顺子)',
+  'THREE_KIND(三条)',
+  'TWO_PAIR(两对)',
+  'PAIR（一对）',
+  'HIGH_CARD(高牌)',
 }
 
 enum ShortPokerStyleEnum {
-  'ROYAL_FlUSH',
-  'STRAIGHT_FLUSH',
-  'FOUR_KIND',
-  'FLUSH',
-  'FULL_HOUSE',
-  'STRAIGHT',
-  'THREE_KIND',
-  'TWO_PAIR',
-  'PAIR',
-  'HIGH_CARD',
+  'ROYAL_FlUSH(皇家同花顺)',
+  'STRAIGHT_FLUSH(同花顺)',
+  'FOUR_KIND(四条)',
+  'FULL_HOUSE(葫芦)',
+  'FLUSH(同花)',
+  'STRAIGHT(顺子)',
+  'THREE_KIND(三条)',
+  'TWO_PAIR(两对)',
+  'PAIR（一对）',
+  'HIGH_CARD(高牌)',
 }
 
 export class PokerStyle implements IPokerStyle {
@@ -59,16 +59,16 @@ export class PokerStyle implements IPokerStyle {
   public flushColor: string = '';
   public straightArr: string[] = [];
   public styleName = [
-    'ROYAL_FlUSH',
-    'STRAIGHT_FLUSH',
-    'FOUR_KIND',
-    'FULL_HOUSE',
-    'FLUSH',
-    'STRAIGHT',
-    'THREE_KIND',
-    'TWO_PAIR',
-    'PAIR',
-    'HIGH_CARD',
+    'ROYAL_FlUSH(皇家同花顺)',
+    'STRAIGHT_FLUSH(同花顺)',
+    'FOUR_KIND(四条)',
+    'FULL_HOUSE(葫芦)',
+    'FLUSH(同花)',
+    'STRAIGHT(顺子)',
+    'THREE_KIND(三条)',
+    'TWO_PAIR(两对)',
+    'PAIR（一对）',
+    'HIGH_CARD(高牌)',
   ];
   public pokerStyle: string[] = ['0', '0', '0', '0', '0', '0', '0', '0', '0', '0'];
   public numObj: Map<string, number> = new Map(POKER_STR.split('').map((m) => [m, 0]));
@@ -78,16 +78,16 @@ export class PokerStyle implements IPokerStyle {
     this.isShort = isShort;
     if (this.isShort) {
       this.styleName = [
-        'ROYAL_FlUSH',
-        'STRAIGHT_FLUSH',
-        'FOUR_KIND',
-        'FLUSH',
-        'FULL_HOUSE',
-        'STRAIGHT',
-        'THREE_KIND',
-        'TWO_PAIR',
-        'PAIR',
-        'HIGH_CARD',
+        'ROYAL_FlUSH(皇家同花顺)',
+        'STRAIGHT_FLUSH(同花顺)',
+        'FOUR_KIND(四条)',
+        'FULL_HOUSE(葫芦)',
+        'FLUSH(同花)',
+        'STRAIGHT(顺子)',
+        'THREE_KIND(三条)',
+        'TWO_PAIR(两对)',
+        'PAIR（一对）',
+        'HIGH_CARD(高牌)',
       ];
     }
     this.init();
