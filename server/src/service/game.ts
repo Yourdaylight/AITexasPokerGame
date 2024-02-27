@@ -1,47 +1,74 @@
-import { Inject, Plugin, Provide } from '@midwayjs/core';
+import { Provide, Inject } from '@midwayjs/decorator';
 import { Context } from '@midwayjs/web';
 import { IGame, IGameService } from '../interface/IGame';
+import { db } from '../lib/sqlite_db'; // 确保这个路径根据您的项目结构是正确的
 
 @Provide('GameService')
 export class GameService implements IGameService {
   @Inject()
   ctx: Context;
 
-  @Plugin()
-  mysql: any;
-
-  async add(game: IGame) {
-    console.log('this.mysql', this.mysql);
-    const gameInfo = await this.mysql.insert('game', {
-      ...game,
+  async add(game: IGame): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const sql = `INSERT INTO game (roomNumber, pot, status, commonCard, winners) VALUES (?, ?, ?, ?, ?)`;
+      db.run(sql, [game.roomNumber, game.pot, game.status, game.commonCard, game.winners], function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ succeed: true, id: this.lastID });
+        }
+      });
     });
-    console.log(gameInfo);
-    return { succeed: gameInfo.affectedRows === 1, id: gameInfo.insertId };
   }
 
-  async update(game: IGame) {
-    const gameInfo = await this.mysql.update('game', {
-      ...game,
+  async update(game: IGame): Promise<any> {
+    return new Promise((resolve, reject) => {
+      // 注意：SQLite 不支持 ON DUPLICATE KEY UPDATE 语法，这里简化为仅示例更新操作
+      const sql = `UPDATE game SET roomNumber = ?, pot = ?, status = ?, commonCard = ?, winners = ? WHERE id = ?`;
+      db.run(sql, [game.roomNumber, game.pot, game.status, game.commonCard, game.winners, game.id], function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ succeed: true });
+        }
+      });
     });
-    console.log(gameInfo);
-    return { succeed: gameInfo.affectedRows === 1 };
   }
 
   async findByID(gid: number): Promise<IGame> {
-    return await this.mysql.get('game', { id: gid });
+    return new Promise((resolve, reject) => {
+      db.get('SELECT * FROM game WHERE id = ?', [gid], (err, row) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(row as IGame);
+        }
+      });
+    });
   }
 
   async findByIDs(ids: number[]): Promise<IGame[]> {
-    return await this.mysql.select('game', {
-      where: { id: ids },
+    const placeholders = ids.map(() => '?').join(',');
+    return new Promise((resolve, reject) => {
+      db.all(`SELECT * FROM game WHERE id IN (${placeholders})`, ids, (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rows as IGame[]);
+        }
+      });
     });
   }
 
   async findByRoomNumber(roomNumber: number): Promise<IGame[]> {
-    const result = await this.mysql.select('game', {
-      where: { roomNumber },
+    return new Promise((resolve, reject) => {
+      db.all('SELECT * FROM game WHERE roomNumber = ?', [roomNumber], (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rows as IGame[]);
+        }
+      });
     });
-    console.log(result, 'game -======================');
-    return JSON.parse(JSON.stringify(result));
   }
 }
