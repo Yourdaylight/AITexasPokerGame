@@ -9,7 +9,7 @@
         </div>
       </div>
       <div class="action-type">
-        <span class="action-btn" @click="action('fold')">fold</span>
+        <span class="action-btn action-btn--fold" @click="action('fold')">fold</span>
         <span class="action-btn" @click="action('check')" v-show="showActionBtn('check')">check</span>
         <span class="action-btn" @click="action('call')" v-show="showActionBtn('call')">call</span>
         <span class="action-btn" @click="otherSizeHandle()" v-show="showActionBtn('raise')">more</span>
@@ -60,6 +60,7 @@ export default class Action extends Vue {
   @Prop() public isTwoPlayer!: boolean;
   @Prop() public currPlayer!: IPlayer;
   @Prop() public audioStatus?: boolean;
+  @Prop() public maxPot!: number;
 
   public isRaise = false;
   public moreSize: number = 0;
@@ -84,7 +85,10 @@ export default class Action extends Vue {
       ? [1 * size, 2 * size, 3 * size, 4 * size]
       : [0.5 * size, 0.75 * size, 1 * size, 2 * size];
   }
-
+  
+  get maxRaiseSize() {
+    return this.maxPot - this.pot;
+  }
   get canActionSize() {
     return Number(this.currPlayer && this.currPlayer.counter + this.currPlayer.actionSize);
   }
@@ -97,7 +101,6 @@ export default class Action extends Vue {
       this.action(`raise:${actionSize}`);
     }
   }
-
   public action(command: string) {
     if (!this.actioned) {
       // play the basic custom audio
@@ -118,11 +121,13 @@ export default class Action extends Vue {
   }
 
   public showActionSize(multiple: number) {
+  // 使用maxRaiseSize来限制显示的加注选项
+    const potentialPot = Math.floor(multiple * this.pot);
     return (
       this.currPlayer &&
       this.currPlayer.counter > Math.floor(multiple) &&
-      this.prevSize * 2 <= Math.floor(multiple * this.pot) &&
-      this.baseSize * 2 <= Math.floor(multiple * this.pot)
+      potentialPot <= this.maxRaiseSize && // 确保潜在的pot值不会超过最大允许值
+      this.baseSize * 2 <= potentialPot
     );
   }
 
@@ -140,15 +145,16 @@ export default class Action extends Vue {
   }
 
   public addSize() {
-    if (this.moreSize === this.currPlayer?.counter) {
-      this.action('allin');
-    } else if (this.prevSize <= 0) {
-      this.action(`bet:${this.moreSize}`);
-    } else {
-      this.action(`raise:${this.moreSize}`);
-    }
+  // 确保加注大小不超过最大允许的加注大小
+  const raiseSize = Math.min(this.moreSize, this.maxRaiseSize);
+  if (raiseSize === this.currPlayer?.counter) {
+    this.action('allin');
+  } else if (this.prevSize <= 0) {
+    this.action(`bet:${raiseSize}`);
+  } else {
+    this.action(`raise:${raiseSize}`);
   }
-
+}
   public showActionBtn(type: string) {
     // check
     if ('check' === type) {
@@ -238,6 +244,12 @@ export default class Action extends Vue {
     .action-btn--allin {
       border: thick double red;
       color: red;
+      font-weight: bold;
+    }
+
+    .action-btn--fold{
+      border: thick double rgb(134, 1, 1);
+      color: rgb(134, 1, 1);
       font-weight: bold;
     }
   }
