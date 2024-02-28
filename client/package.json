@@ -5,7 +5,8 @@
     "serve": "vue-cli-service serve",
     "dev": "cross-env NODE_ENV=develop vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "build_prod": "cross-env NODE_ENV=production VUE_APP_API_IP=101.35.53.113 VUE_APP_API_PORT=8888 vue-cli-service build"
   },
   "dependencies": {
     "animate.css": "^4.1.1",
