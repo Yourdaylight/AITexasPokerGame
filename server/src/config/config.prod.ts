@@ -16,11 +16,5 @@ export default (appInfo: MidwayAppInfo) => {
     },
   };
 
-  config.mysql = {
-    client: {
-      host: 'mysql',
-    },
-  };
-
   return config as MidwayConfig;
 };

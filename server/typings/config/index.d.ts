@@ -18,7 +18,6 @@ import 'egg-cors';
 import 'egg-redis';
 import 'egg-socket.io';
 import 'egg-jwt';
-import 'egg-mysql';
 import { EggPluginItem } from 'egg';
 declare module 'egg' {
   interface EggPlugin {
@@ -38,6 +37,5 @@ declare module 'egg' {
     'redis'?: EggPluginItem;
     'io'?: EggPluginItem;
     'jwt'?: EggPluginItem;
-    'mysql'?: EggPluginItem;
   }
 }
