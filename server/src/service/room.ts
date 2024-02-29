@@ -2,7 +2,7 @@ import { Provide, Inject, Plugin } from '@midwayjs/core';
 import { Context } from '@midwayjs/web';
 import { IRoom, IRoomBasicInfo, IRoomService } from '../interface/IRoom';
 import { IGameRoom } from '../interface/IGameRoom';
-import { db } from '../lib/sqlite_db'; // 确保这个路径根据您的项目结构是正确的
+import { db, logger_db } from '../lib/sqlite_db'; // 确保这个路径根据您的项目结构是正确的
 import { parse } from 'path';
 
 const KeyPrefix = 'room';
@@ -40,7 +40,6 @@ export default class RoomService implements IRoomService {
     // 构建占位符字符串用于 IN 查询
     const placeholders = roomNumbers.map(() => '?').join(',');
     const sql = `SELECT roomNumber, create_time FROM room WHERE roomNumber IN (${placeholders}) ORDER BY create_time DESC LIMIT ?`;
-    
     // 使用 SQLite 查询房间信息
     const roomsInDB: Array<{ roomNumber: string; create_time: string }> = await new Promise((resolve, reject) => {
       db.all(sql, [...roomNumbers, size], (err, rows) => {
@@ -51,13 +50,16 @@ export default class RoomService implements IRoomService {
         }
       });
     });
-  
+    //roomsInDB的值转json字符串写入数据库logs
+    // logger_db(JSON.stringify(roomsInDB), 'getRooms in RoomService, after db.all');
     // 获取缓存中的房间信息
     const app = this.ctx.app as any;
     const cachedRooms = app.io.of('/socket').gameRooms;
     if (!cachedRooms) {
+      // logger_db('cachedRooms is null', 'getRooms in RoomService, before return');
       return ret;
     }
+    // logger_db(JSON.stringify(cachedRooms), 'getRooms in RoomService, after app.io.of');
 
     roomsInDB.forEach(r => {
       const room: IGameRoom | undefined = cachedRooms[r.roomNumber];
