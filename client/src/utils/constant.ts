@@ -21,6 +21,7 @@ export enum OnlineAction {
   SitList = 'sitList',
   /** 代表第一把开局的游戏 */
   FirstGame = 'firstGame',
+  ShowCard = 'showCard',
 }
 
 /**

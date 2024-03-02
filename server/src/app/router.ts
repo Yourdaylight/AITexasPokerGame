@@ -9,4 +9,5 @@ export default function (app: Application) {
   app.io.of('/socket').route('sitDown', app.io.controller.game.sitDown);
   app.io.of('/socket').route('standUp', app.io.controller.game.standUp);
   app.io.of('/socket').route('delayTime', app.io.controller.game.delayTime);
+  app.io.of('/socket').route('showCard', app.io.controller.game.showCard);
 }

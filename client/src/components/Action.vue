@@ -16,6 +16,7 @@
         <span class="action-btn action-btn--allin" @dblclick="action('allin')" v-show="!showActionBtn('raise')">
           ALLIN
         </span>
+        <span  class="action-btn" @click="action('show')">show</span>
       </div>
     </div>
 

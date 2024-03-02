@@ -220,6 +220,14 @@ export default class Game extends Vue {
   get currPlayer() {
     return this.players.find((u: IPlayer) => this.userInfo.userId === u.userId);
   }
+  get currentPosition(){
+    const currentPlayer = this.currPlayer;
+    if (!currentPlayer) return null; // 如果没有当前玩家，返回null
+    // 在sitList中查找当前玩家的座位，并返回该座位的位置
+    const sit = this.sitList.find((sit) => sit.player && sit.player.userId === currentPlayer.userId);
+    return sit ? sit.position : null; // 如果找到座位，返回位置，否则返回null
+  }
+
 
   get minActionSize() {
     return this.prevSize <= 0 ? this.baseSize * 2 : this.prevSize * 2;
@@ -310,6 +318,7 @@ export default class Game extends Vue {
   public showRecord = false;
   public playersStatus: IPlayersStatus = {};
   public showSpeakSettings = false;
+  public showCardsPlayers: any[] = [];
 
   @Watch('latestSpecialAction')
   public privateActionNoticeChange(newValue: ILatestActionData, oldValue: ILatestActionData) {
@@ -505,7 +514,17 @@ export default class Game extends Vue {
         this.showAllin = false;
       }, 3000);
     }
-    this.emit('action', { command });
+    if (command === 'show') {
+      this.emit('showCard',{
+        command, handCard:this.handCard,
+         position:this.currentPosition, 
+         userId: this.userInfo.userId,
+         nickName: this.userInfo.nickName
+      });
+    }else{
+      this.emit('action', { command });
+    }
+
     // this.isAction = false;
     // this.isRaise = false;
   }
@@ -702,6 +721,16 @@ export default class Game extends Vue {
             });
           }
         }
+      }
+      if (msg.action === OnlineAction.ShowCard){
+        this.sitList.map((sit: ISit) => {
+          if (sit.player && sit.player.nickName == msg.data.nickName) {
+            sit.player.handCard = msg.data.handCard;
+            if (this.currPlayer?.nickName == msg.data.nickName) {
+              this.sendMsgHandle("明牌！")
+            }
+          }
+        })
       }
     });
 

@@ -475,6 +475,21 @@ class GameController extends BaseSocketController {
     }
   }
 
+  async showCard(){
+    const { payload } = this.message;
+    const userInfo: IPlayer = await this.getUserInfo();
+    const roomInfo = await this.getRoomInfo();
+    const handCard = payload.handCard;
+    //log还需要显示出roomInfo.gameId
+    console.log('showCard: ', roomInfo.gameId, userInfo.userId, handCard);
+    this.adapter(Online, OnlineAction.ShowCard, {
+      handCard,
+      position: payload.position,
+      nickName: userInfo.nickName,
+      userId: payload.userId,
+    });
+  }
+
   async action() {
     try {
       const { payload } = this.message;
@@ -527,8 +542,8 @@ class GameController extends BaseSocketController {
               p.status = -1;
             }
           });
+          console.log('fold ===============', roomInfo.players, roomInfo.game.allPlayer);
         }
-        console.log('fold ===============', roomInfo.players, roomInfo.game.allPlayer);
         // todo notice next player action
         this.updateGameInfo();
         console.log('curr player', roomInfo.game.currPlayer.node);

@@ -6,6 +6,7 @@
         <div class="default" v-show="!sit.player">
           <i>sit</i>
         </div>
+        <div class="sit-number">NO.{{ key + 1 }}</div>
         <div class="sit-player" v-if="sit.player">
           <div class="player" :class="{ fold: sit.player.status === -1 }" :data-player-id="sit.player.userId">
             <div class="count-down" v-show="actionUserId === sit.player.userId">{{ time }}</div>
@@ -17,7 +18,7 @@
               v-show="playersStatus[sit.player.userId] && playersStatus[sit.player.userId].speaking"
               class="speaking-icon"
             >
-              🎙️
+              Speak🎙️
             </span>
             <div
               class="counter"
@@ -41,7 +42,7 @@
             <div
               class="hand-card"
               v-show="
-                !!!currPlayer ||
+              !!!currPlayer ||
                   (sit.player.userId !== currPlayer.userId && sit.player.handCard && sit.player.handCard.length !== 0)
               "
             >
@@ -57,6 +58,7 @@
               {{ PokeStyle(sit.player.handCard) }}
             </div>
           </div>
+          <!-- 展示当前客户端用户的手牌 -->
           <div class="cards" v-show="showHandCard(sit)">
             <div class="hand-card">
               <cardList :cardList="handCard" :valueCards="valueCards"></cardList>
@@ -66,7 +68,7 @@
                 @click="delayTime"
               >
                 <i class="iconfont icon-clock "></i>
-                <span>{{ sit.player.delayCount }}</span>
+                <span>Delay Count{{ sit.player.delayCount }}</span>
               </div>
             </div>
             <div class="ready" v-show="handCard && handCard.length === 0">ready</div>
@@ -112,7 +114,7 @@ export default class SitList extends Vue {
   @Prop() public roomConfig!: IRoom;
   @Prop() public actionUserId!: string;
   @Prop() public valueCards!: string;
-  @Prop({ default: 30, type: Number }) public time!: number;
+  @Prop({ default: 45, type: Number }) public time!: number;
   @Prop() public playersStatus!: IPlayersStatus;
   @Prop() public buyInSize!: number;
 

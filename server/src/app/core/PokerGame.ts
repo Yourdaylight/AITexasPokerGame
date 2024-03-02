@@ -44,7 +44,7 @@ export enum EGameStatus {
 /**
  * Action time
  */
-const ACTION_TIME = 30 * 1000;
+const ACTION_TIME = 45 * 1000;
 
 /**
  * Delay add time
