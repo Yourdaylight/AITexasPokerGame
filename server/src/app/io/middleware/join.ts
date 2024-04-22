@@ -2,6 +2,7 @@ import { Context } from '@midwayjs/web';
 import { IGameRoom } from '../../../interface/IGameRoom';
 import { Online, OnlineAction, P2PAction } from '../../../utils/constant';
 import { IPlayer } from '../../core/Player';
+import {logger_db} from '../../../lib/sqlite_db';
 
 export default () => {
   function sendMsgToClients({
@@ -24,6 +25,8 @@ export default () => {
         target: 'participator',
         data: { players },
       });
+      //发送的数据写入数据库
+      // logger_db(JSON.stringify({ clients, action, target: 'participator', data: { players } }), 'sendMsgToClients');
     });
   }
 

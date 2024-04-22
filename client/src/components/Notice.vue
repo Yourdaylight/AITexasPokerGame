@@ -6,7 +6,14 @@
         v-if="message !== ''"
         :style="{ top: `${message.top}vh`, animationDuration: `${duration}s` }"
       >
-        {{ message.message }}
+        <template v-if="isSpecialMessage(message.message)">
+          <!-- message的前两个元素 -->
+          {{ message.message.split(':')[0] }}:{{ message.message.split(':')[1] }}
+          <cardList :cardList="getCardList(message.message)"  size="mini"></cardList>
+        </template>
+        <template v-else>
+          {{ message.message }}
+        </template>
       </i>
     </div>
   </div>
@@ -15,7 +22,14 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 
-@Component
+import cardStyle from '@/components/CardStyle.vue';
+import Card from './CardList.vue';
+@Component({
+  components: {
+    cardStyle,
+    cardList: Card,
+  },
+})
 export default class Notice extends Vue {
   @Prop() public messageList!: any[];
   public duration = 8;
@@ -32,6 +46,30 @@ export default class Notice extends Vue {
 
   public beforeDestroy() {
     window.removeEventListener('resize', this.resetDuration);
+  }
+
+  get isSpecialMessage() {
+    const specialMessageCheck = (msg: string) => {
+      //判断msg的开头是否是特殊前缀
+      if (typeof msg !== 'string') {
+        console.error('Message is not a string:', msg);
+        return false;
+      }
+      //如果根据;分隔的第一个元素是明牌，则返回true
+      const isSpecial = msg.split(':')[1].startsWith('明牌');
+
+      console.log(`Message[${msg}] starts with special prefix: ${isSpecial}`);      
+      return isSpecial;    
+    };    
+    return specialMessageCheck;
+  }
+
+  // 方法来处理特殊消息并返回卡片列表
+
+  public getCardList(msg: string) {
+    const msg_res = msg.split(':')[2].split(',');
+    console.log(`Message[${msg_res}] is special message, get card list`);
+    return msg_res
   }
 }
 </script>

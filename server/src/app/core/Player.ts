@@ -40,7 +40,7 @@ export enum ECommand {
   RAISE = 'raise',
   CHECK = 'check',
   FOLD = 'fold',
-}
+  }
 
 export enum EPlayerType {
   DEFAULT = '',

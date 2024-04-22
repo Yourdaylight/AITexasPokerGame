@@ -114,6 +114,7 @@ import { PokerStyle } from '@/utils/PokerStyle';
 import * as CustomAudio from '@/utils/audio';
 import { MaxBuyInFactor, Online, OnlineAction, P2PAction } from '@/utils/constant';
 import origin from '@/utils/origin';
+import {poke2String} from '@/utils/map';
 import { Howl } from 'howler';
 import cookie from 'js-cookie';
 import io from 'socket.io-client';
@@ -727,7 +728,12 @@ export default class Game extends Vue {
           if (sit.player && sit.player.nickName == msg.data.nickName) {
             sit.player.handCard = msg.data.handCard;
             if (this.currPlayer?.nickName == msg.data.nickName) {
-              this.sendMsgHandle("明牌！")
+              if (this.currPlayer?.handCard){
+                const handCardString = poke2String(this.currPlayer?.handCard )
+                // 转字符串，前两个元素为一个，后两个为一个
+                // this.sendMsgHandle(`明牌:${handCardString}`)
+                this.sendMsgHandle(`明牌🎴:${this.currPlayer?.handCard}`)
+              }
             }
           }
         })

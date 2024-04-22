@@ -95,7 +95,7 @@ export default (appInfo: MidwayAppInfo) => {
       },
     },
     redis: {
-      host: '127.0.0.1',
+      host: '192.168.1.6',
       port: 6379,
       password: '98765432',
     },
@@ -104,7 +104,7 @@ export default (appInfo: MidwayAppInfo) => {
   config.redis = {
     client: {
       port: 6379,
-      host: '127.0.0.1',
+      host: '192.168.1.6',
       password: '98765432',
       db: 0,
     },

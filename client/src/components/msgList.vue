@@ -21,12 +21,14 @@ export default class MsgList extends Vue {
   position: absolute;
   bottom: 0;
   padding: 10px 0;
+
   ul {
     height: 100px;
     width: 100vw;
     box-sizing: border-box;
     overflow-y: auto;
     padding: 0 12px;
+
     li {
       list-style: none;
       line-height: 20px;

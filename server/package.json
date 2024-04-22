@@ -43,7 +43,7 @@
     "stop": "egg-scripts stop --title=taxes-poker-server",
     "start_build": "npm run build && NODE_ENV=production midway-bin dev",
     "clean": "midway-bin clean",
-    "dev": "cross-env ets && cross-env NODE_ENV=local midway-bin dev --ts --sticky --port 5000",
+    "dev": "cross-env ets && cross-env NODE_ENV=local midway-bin dev --ts --sticky --port 5002",
     "debug": "NODE_ENV=local midway-bin debug --ts",
     "test": "npm run lint && midway-bin test --ts",
     "cov": "midway-bin cov --ts",

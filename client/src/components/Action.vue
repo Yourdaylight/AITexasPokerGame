@@ -16,9 +16,9 @@
         <span class="action-btn action-btn--allin" @dblclick="action('allin')" v-show="!showActionBtn('raise')">
           ALLIN
         </span>
-        <span  class="action-btn" @click="action('show')">show</span>
       </div>
     </div>
+
 
     <div class="action-other-size" v-if="isRaise">
       <div class="action-other-size-body">
@@ -34,7 +34,9 @@
           @change="getActionSize"
         ></range>
         <div class="btn" @click="addSize">ok</div>
+        
       </div>
+      <span  class="action-btn action-btn--fold" @click="action('show')">show</span>
       <div class="shadow" @click="isRaise = false"></div>
     </div>
   </div>

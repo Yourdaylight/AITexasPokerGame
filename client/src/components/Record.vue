@@ -5,7 +5,9 @@
       <div class="title">
         牌局记录
         <span class="close" @click="show = false">X</span>
+      <button @click="showTransferScheme()">计算方案</button>
       </div>
+
       <ul>
         <li class="record-header">
           <i>昵称</i>
@@ -68,6 +70,61 @@ export default class Record extends Vue {
     const rate = ((numerator / denominator) * 100).toFixed(2);
     return `${rate}%<br />(${numerator}/${denominator})`;
   }
+  // 计算转账方案的方法
+  private calculateTransferScheme(players: IPlayer[]): { from: string; to: string; amount: number }[] {
+    // 创建玩家数组的深拷贝，并初始化其净收入
+    let sortedPlayers = players.map(player => ({
+      ...player,
+      netIncome: player.counter - player.buyIn // 添加一个新属性来跟踪净收入变化，而不修改原始的buyIn
+    })).sort((a, b) => a.netIncome - b.netIncome);
+
+    let transfers: { from: string; to: string; amount: number }[] = [];
+
+    while (sortedPlayers.length > 0) {
+      const maxIncomePlayer = sortedPlayers[sortedPlayers.length - 1];
+      const minIncomePlayer = sortedPlayers[0];
+      const maxIncome = maxIncomePlayer.netIncome;
+      const minIncome = minIncomePlayer.netIncome;
+
+      if (maxIncome <= 0 || minIncome >= 0) {
+        break;
+      }
+
+      const amount = Math.min(maxIncome, -minIncome);
+      transfers.push({
+        from: minIncomePlayer.nickName,
+        to: maxIncomePlayer.nickName,
+        amount: amount
+      });
+
+      // 更新净收入而不是buyIn
+      maxIncomePlayer.netIncome -= amount;
+      minIncomePlayer.netIncome += amount;
+
+      // 移除净收入已经调整至0的玩家
+      if (maxIncomePlayer.netIncome === 0) {
+        sortedPlayers.pop();
+      }
+      if (minIncomePlayer.netIncome === 0) {
+        sortedPlayers.shift();
+      }
+
+      // 注意：由于我们修改了对象的netIncome属性，而不是原始的buyIn或counter，因此不需要重新排序。
+      // 如果你还需要基于更新后的净收入重新排序，可以取消注释下面的代码。
+      // sortedPlayers.sort((a, b) => a.netIncome - b.netIncome);
+    }
+
+    return transfers;
+  }
+
+  public showTransferScheme() {
+    const transfers = this.calculateTransferScheme(this.players);
+    const transferStr = transfers.map(transfer => `${transfer.from}向${transfer.to}传输${transfer.amount}`);
+    // alert出来
+    alert(transferStr.join('\n'));
+  }
+
+
 }
 </script>
 

@@ -1,6 +1,9 @@
 <template>
-  <div class="card-container">
-    <div class="card" v-for="(card, key) in cardList" v-bind:class="{ show: show, turn: show && card !== '' }">
+  <div class="card-container"
+  >
+    <div  v-if="size == 'normal'" class="card" v-for="(card, key) in cardList" 
+    v-bind:class="{ show: show, turn: show && card !== '' }"
+    >
       <i></i>
       <span class="card-bg red" :class="getColor(map(card)[1])">
         <div class="shadow" v-show="shadow(card)"></div>
@@ -8,9 +11,20 @@
         <b class="color">
           <cardStyle size="small" :type="map(card)[1]"></cardStyle>
         </b>
-        <b class="color big">
-          <cardStyle size="big" :type="map(card)[1]"></cardStyle>
-        </b>
+        <div v-if="size == 'normal'">
+          <b class="color big">
+            <cardStyle size="big" :type="map(card)[1]"></cardStyle>
+          </b>
+        </div>
+      </span>
+    </div>
+
+    <div v-if="size == 'mini'" v-for="(card, key) in cardList" 
+    v-bind:class="{ show: show, turn: show && card !== '' }"
+    >
+      <span class="card-bg red" :class="getColor(map(card)[1])">
+        <b class="number">{{ map(card)[0] }} </b>
+        <cardStyle size="small" :type="map(card)[1]"></cardStyle>
       </span>
     </div>
   </div>
@@ -29,6 +43,8 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 export default class Card extends Vue {
   @Prop() public cardList: any;
   @Prop({ default: () => [], type: Array }) public valueCards!: string[];
+  //控制显示大小
+  @Prop({ default: 'normal', type: String }) public size!: string; // 添加size prop
 
   get show() {
     return this.cardList.length !== 0;
@@ -148,6 +164,7 @@ export default class Card extends Vue {
         font-size: 20px;
         line-height: 60px;
         font-family: Arial;
+
         &.big {
           left: 15px;
           font-size: 35px;
@@ -168,10 +185,33 @@ export default class Card extends Vue {
     }
   }
 
-  @-webkit-keyframes turnA /* Safari 与 Chrome */ {
+  .mini-size {
+    height: 10px;
+    /* 假设mini模式下高度为正常的一半 */
+    width: 40px;
+    /* 假设mini模式下宽度为正常的一半 */
+  }
+
+
+  .mini-size .number {
+    font-size: 8px;
+    /* 调整数字大小适应mini模式 */
+    line-height: 15px;
+    /* 调整行高适应mini模式 */
+    top: 5px;
+    /* 调整位置以居中显示 */
+    left: 2px;
+    /* 调整位置以居中显示 */
+  }
+
+  @-webkit-keyframes turnA
+
+  /* Safari 与 Chrome */
+    {
     from {
       transform: rotateY(0deg);
     }
+
     to {
       transform: rotateY(-180deg);
     }
