@@ -25,7 +25,7 @@ export class UserService implements IUserService {
 
   async findByAccount(account: string): Promise<IUser> {
     return new Promise((resolve, reject) => {
-      const sql = 'SELECT * FROM user WHERE account = ?';
+      const sql = 'SELECT * FROM user WHERE account = ? and is_active=true';
       db.get(sql, [account], (err, row) => {
         if (err) {
           reject(err);
@@ -38,13 +38,26 @@ export class UserService implements IUserService {
 
   async addUser(accountInfo: IAccountInfo): Promise<{ succeed: boolean }> {
     return new Promise((resolve, reject) => {
-      const sql = 'INSERT INTO user (account, password, nickName) VALUES (?, ?, ?)';
-      db.run(sql, [accountInfo.userAccount, accountInfo.password, accountInfo.nickName], function(err) {
+      const sql = 'INSERT INTO user (account, password, nickName, email) VALUES (?, ?, ?, ?)';
+      db.run(sql, [accountInfo.userAccount, accountInfo.password, accountInfo.nickName, accountInfo.email], function(err) {
         if (err) {
           reject(err);
         } else {
           // this.lastID refers to the last inserted row ID
           resolve({ succeed: this.lastID ? true : false });
+        }
+      });
+    });
+  }
+
+  async activateUser(accountInfo: IAccountInfo): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const sql = 'UPDATE user SET is_active = ? WHERE account = ?';
+      db.run(sql, [true, accountInfo.userAccount], function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ succeed: this.changes ? true : false });
         }
       });
     });

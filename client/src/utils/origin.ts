@@ -4,7 +4,7 @@ const getUrls = () => {
   }
 
   const baseUrl = 'http://' + (process.env.VUE_APP_API_IP || '192.168.1.6');
-  const port = process.env.VUE_APP_API_PORT || 15000;
+  const port = process.env.VUE_APP_API_PORT || 5002;
   const urls = [`${baseUrl}:${port}`];
   return urls;
 };

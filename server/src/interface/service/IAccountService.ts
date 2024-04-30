@@ -22,4 +22,18 @@ export interface IAccountService {
    * @returns {Promise<string>}
    */
   register(accountInfo: IAccountInfo): Promise<string>;
+
+  /**
+   * Send email verification code
+   * @param {string} email - email address
+   * @returns {Promise<string>}
+   */
+  sendEmailVerificationCode(email: string): Promise<string>;
+
+  /**
+   * verify by admin
+   * @param {string} verify_id
+   * @returns {Promise<string>}
+   */
+  verify(verify_id: string, emailCode: string): Promise<string>;
 }

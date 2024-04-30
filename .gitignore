@@ -9,3 +9,4 @@ npm-debug.*
 /server/src/config/config.local.ts
 .idea/
 .vscode/
+nohup.out

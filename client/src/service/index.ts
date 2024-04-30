@@ -1,10 +1,10 @@
 import request from '../utils/request';
 
 export default {
-  register: ({ userAccount = '', password = '', nickName = '' }) =>
+  register: ({ userAccount = '', password = '', nickName = '', code='', email = '' }) =>
     request({
       url: '/user/register',
-      body: { userAccount, password, nickName },
+      body: { userAccount, password, nickName, code, email },
     }),
   login: (userAccount: string, password: string) =>
     request({
@@ -16,6 +16,19 @@ export default {
       url: '/user',
       body: {},
     }),
+    
+    sendEmailVerificationCode: (email: string) =>
+      request({
+        url: '/user/sendEmailVerificationCode',
+        body: { email },
+      }),
+
+      getUsers: () =>{
+        return request({
+          url: '/user/inactiveUsers',
+          body: {},
+        });
+      },
   createRoom: (isShort: boolean, smallBlind: number, time: number) =>
     request({
       url: '/game/room',
@@ -51,4 +64,5 @@ export default {
       url: '/game/record/find/selfPast7DayGame',
       body: { userID },
     }),
+
 };

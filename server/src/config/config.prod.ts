@@ -81,7 +81,7 @@ export default (appInfo: MidwayAppInfo) => {
     secret: '123456',
     enable: true,
     match(ctx: Context) {
-      const reg = /login|register/;
+      const reg = /login|register|verify/;
       return !reg.test(ctx.originalUrl);
     },
   };
