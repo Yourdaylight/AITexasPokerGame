@@ -10,3 +10,5 @@ npm-debug.*
 .idea/
 .vscode/
 nohup.out
+.github/
+
