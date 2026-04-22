@@ -87,10 +87,23 @@
       :curr-game-index="currGameIndex"
       :command-list="commandRecordList"
     ></gameRecord>
+    <AIAdvisor
+      :hand-card="handCard"
+      :common-card="commonCard"
+      :pot="pot"
+      :is-action="isAction"
+      :players="gamePlayers"
+      :prev-size="prevSize"
+      :small-blind="roomConfig.smallBlind"
+      :position="currentPosition"
+      :current-round-actions="currentRoundActions"
+      :room-id="roomId"
+    ></AIAdvisor>
   </div>
 </template>
 
 <script lang="ts">
+import AIAdvisor from '@/components/AIAdvisor.vue';
 import actionDialog from '@/components/Action.vue';
 import animation from '@/components/Animation.vue';
 import BuyIn from '@/components/BuyIn.vue';
@@ -150,6 +163,7 @@ const ACTION_TIME = 60;
 
 @Component({
   components: {
+    AIAdvisor,
     sitList,
     commonCard,
     BuyIn,

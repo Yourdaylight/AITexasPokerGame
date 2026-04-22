@@ -51,6 +51,9 @@ CREATE TABLE IF NOT EXISTS user (
   nickName TEXT,
   password TEXT,
   account TEXT,
+  email TEXT,
+  is_active INTEGER DEFAULT 0,
+  is_admin INTEGER DEFAULT 0,
   create_time TEXT DEFAULT CURRENT_TIMESTAMP,
   update_time TEXT
 );

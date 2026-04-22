@@ -1,5 +1,5 @@
 module.exports = {
-  publicPath: process.env.NODE_ENV === 'production' ? '/texasPoker/' : '/',
+  publicPath: process.env.VUE_APP_PUBLIC_PATH || '/',
   devServer: {
     disableHostCheck: true,
   },

@@ -1,43 +1,42 @@
 <template>
   <div class="register-container container">
+    <div class="particles">
+      <span v-for="i in 15" :key="i" :style="particleStyle(i)"></span>
+    </div>
     <div class="register-body">
-      <div class="logo">D Z P</div>
-      <div class="title">Create Account</div>
+      <div class="logo-area">
+        <div class="logo-icon">♠♥</div>
+        <div class="title">Create Account</div>
+      </div>
       <div class="user-name">
         <XInput v-model="form.userAccount" text="account" @focus="removeValid('userAccount')"
-          :error="errorData.indexOf('userAccount') > -1"></XInput>
+          :error="errorData.indexOf('userAccount') > -1" dark></XInput>
       </div>
       <div class="user-name">
         <XInput v-model="form.nickName" text="nickName" @focus="removeValid('nickName')"
-          :error="errorData.indexOf('nickName') > -1"></XInput>
+          :error="errorData.indexOf('nickName') > -1" dark></XInput>
       </div>
       <div class="password">
         <XInput v-model="form.password" text="password" type="password" @focus="removeValid('password')"
-          :error="errorData.indexOf('password') > -1"></XInput>
+          :error="errorData.indexOf('password') > -1" dark></XInput>
       </div>
       <div class="confirm">
         <XInput v-model="form.confirm" text="confirm" type="password" @focus="removeValid('confirm')"
-          :error="errorData.indexOf('confirm') > -1"></XInput>
+          :error="errorData.indexOf('confirm') > -1" dark></XInput>
       </div>
-      <!-- 加上邮箱和邮箱验证码-->
       <div class="user-email">
         <XInput v-model="form.email" text="email" @focus="removeValid('email')"
-          :error="errorData.indexOf('email') > -1"></XInput>
+          :error="errorData.indexOf('email') > -1" dark></XInput>
       </div>
-
-      <!-- 获取邮箱验证码的按钮 -->
       <div class="email-verification-code">
-        <!-- 验证码输入框 -->
         <XInput v-model="form.code" text="验证码" @focus="removeValid('code')"
-          :error="errorData.indexOf('code') > -1">
-        </XInput>
+          :error="errorData.indexOf('code') > -1" dark></XInput>
       </div>
-
       <div class="register-btn">
-        <button @click="getcode" :disabled="isEmailCodeSent && countdown > 0" style="overflow: auto;">
-          {{ isEmailCodeSent ? `Resend (${countdown}s)` : 'Get Verification Code' }}
+        <button class="btn-code" @click="getcode" :disabled="isEmailCodeSent && countdown > 0">
+          {{ isEmailCodeSent ? `Resend (${countdown}s)` : 'Get Code' }}
         </button>
-        <div class="s-btn btn"><span @click="register">submit</span></div>
+        <div class="s-btn"><span class="btn-gold" @click="register">Submit</span></div>
       </div>
     </div>
   </div>
@@ -65,19 +64,33 @@ export default class Register extends Vue {
     code: '',
   };
   public errorData: string[] = [];
-  public isEmailCodeSent = false; // 标记验证码是否已发送  
-  public countdown = 0; // 倒计时剩余时间  
-  private countdownTimer: any = null; // 用于存储倒计时定时器  
+  public isEmailCodeSent = false;
+  public countdown = 0;
+  private countdownTimer: any = null;
+
+  public particleStyle(i: number) {
+    const size = Math.random() * 3 + 1;
+    return {
+      width: size + 'px',
+      height: size + 'px',
+      left: Math.random() * 100 + '%',
+      top: Math.random() * 100 + '%',
+      animationDelay: Math.random() * 6 + 's',
+      animationDuration: Math.random() * 4 + 4 + 's',
+    };
+  }
+
   private startCountdown() {
     this.countdownTimer = setInterval(() => {
       if (this.countdown > 0) {
         this.countdown--;
       } else {
-        this.isEmailCodeSent = false; // 倒计时结束，允许重新发送验证码  
-        clearInterval(this.countdownTimer); // 清除定时器  
+        this.isEmailCodeSent = false;
+        clearInterval(this.countdownTimer);
       }
     }, 1000);
   }
+
   public valid() {
     const errorArr: string[] = [];
     for (const formKey in this.form) {
@@ -85,12 +98,10 @@ export default class Register extends Vue {
         errorArr.push(formKey);
       }
     }
-    // confirm password
     if (this.form.password !== this.form.confirm) {
       errorArr.push('confirm');
       errorArr.push('password');
     }
-    //校验邮箱，仅支持qq邮箱，163邮箱，126邮箱，sina邮箱，gmail邮箱，hotmail邮箱，yahoo邮箱，sohu邮箱
     const supported_emails = ['qq.com', '163.com', '126.com', 'sina.com', 'gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com'];
     if (this.form.email.indexOf('@') === -1) {
       errorArr.push('email');
@@ -100,11 +111,9 @@ export default class Register extends Vue {
         errorArr.push('email');
       }
     }
-    //校验邮箱验证码(6位数字)
     if (this.form.code.length !== 6 || isNaN(Number(this.form.code))) {
       errorArr.push('code');
     }
-
     this.errorData = errorArr;
   }
 
@@ -133,52 +142,131 @@ export default class Register extends Vue {
   public async getcode() {
     try {
       if (!this.form.email) {
-        this.errorData.push('email'); // 如果邮箱为空，则添加错误提示  
+        this.errorData.push('email');
         return;
       }
-
-      // 发送验证码请求到后端（假设service.sendcode是发送验证码的API方法）  
       await service.sendEmailVerificationCode(this.form.email);
-
-      this.isEmailCodeSent = true; // 标记验证码已发送  
-      this.countdown = 60; // 设置倒计时60秒  
-
-      // 开始倒计时  
+      this.isEmailCodeSent = true;
+      this.countdown = 60;
       this.startCountdown();
-
       this.$plugin.toast('Verification code sent to your email.');
-
     } catch (e) {
       this.$plugin.toast(JSON.stringify(e));
     }
   }
 }
 </script>
-<style lang="less">
+<style lang="less" scoped>
 .register-container {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+  min-height: 100vh;
+  width: 100vw;
+  box-sizing: border-box;
   padding: 20px;
-  max-width: 600px;
-  margin: auto;
-  // 滚动条
-  // overflow-y: auto;
-  // overflow-y: auto;
+  position: relative;
+  overflow: hidden;
 
-  .logo {
-    text-align: left;
-    margin-bottom: 10px;
-    font-size: 16px;
-    font-weight: 700;
+  .particles {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    span {
+      position: absolute;
+      background: rgba(212, 175, 55, 0.4);
+      border-radius: 50%;
+      animation: float linear infinite;
+    }
   }
 
-  .title {
-    text-align: left;
-    margin-bottom: 5vh;
+  @keyframes float {
+    0% { transform: translateY(0) scale(1); opacity: 0.4; }
+    50% { opacity: 0.8; }
+    100% { transform: translateY(-100px) scale(0); opacity: 0; }
   }
 
-  .register-btn {
-    width: 50vw;
-    float: right;
-    margin: auto;
+  .register-body {
+    max-width: 420px;
+    margin: 20px auto;
+    border-radius: 16px;
+    box-sizing: border-box;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 60px rgba(212, 175, 55, 0.08);
+    background: rgba(20, 20, 35, 0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    padding: 30px;
+    position: relative;
+    z-index: 1;
+
+    .logo-area {
+      text-align: center;
+      margin-bottom: 20px;
+
+      .logo-icon {
+        font-size: 28px;
+        color: #d4af37;
+        letter-spacing: 8px;
+        margin-bottom: 4px;
+      }
+
+      .title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #d4af37;
+        letter-spacing: 2px;
+      }
+    }
+
+    .register-btn {
+      width: 100%;
+      margin-top: 16px;
+
+      .btn-code {
+        width: 100%;
+        padding: 10px 0;
+        border-radius: 8px;
+        border: 1px solid rgba(212, 175, 55, 0.4);
+        background: transparent;
+        color: #d4af37;
+        font-size: 13px;
+        cursor: pointer;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+
+        &:hover:not(:disabled) {
+          border-color: #d4af37;
+          background: rgba(212, 175, 55, 0.08);
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+
+      .btn-gold {
+        display: block;
+        text-align: center;
+        padding: 12px 0;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #d4af37, #c49b2a);
+        color: #0a0a0a;
+        font-weight: 700;
+        font-size: 16px;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+
+        &:hover {
+          background: linear-gradient(135deg, #e5c349, #d4af37);
+          box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+          transform: translateY(-1px);
+        }
+      }
+    }
   }
 }
 </style>

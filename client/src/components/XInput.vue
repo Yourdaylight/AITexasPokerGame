@@ -1,5 +1,5 @@
 <template>
-  <div class="input-container">
+  <div class="input-container" :class="{ dark: dark }">
     <div class="user-name input-bd" :class="{ move: focus || value !== '', focus: focus, error: error }">
       <div class="input-name">{{ text }}</div>
       <div class="input-text">
@@ -19,6 +19,7 @@ export default class XInput extends Vue {
   @Prop({ default: '', type: String }) public text!: string;
   @Prop({ default: 'text', type: String }) public type!: string;
   @Prop({ default: false, type: Boolean }) public error!: boolean;
+  @Prop({ default: false, type: Boolean }) public dark!: boolean;
 
   public focus = false;
 
@@ -42,7 +43,6 @@ export default class XInput extends Vue {
 }
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="less">
 .input-container {
   .input-name {
@@ -118,6 +118,45 @@ export default class XInput extends Vue {
     z-index: 9;
     right: 0;
     top: 8px;
+  }
+
+  // Dark mode overrides
+  &.dark {
+    .input-name {
+      background-color: rgba(20, 20, 35, 0.95);
+      color: rgba(212, 175, 55, 0.6);
+    }
+
+    .input-text input {
+      color: #e0e0e0;
+    }
+
+    .input-bd {
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+    }
+
+    .focus {
+      border-color: rgba(212, 175, 55, 0.7);
+      box-shadow: 0 0 12px rgba(212, 175, 55, 0.15);
+
+      .input-name {
+        color: #d4af37;
+      }
+    }
+
+    .error {
+      border-color: #e8050a;
+
+      .input-name {
+        color: #e8050a;
+      }
+    }
+
+    .close {
+      color: rgba(212, 175, 55, 0.5);
+    }
   }
 }
 </style>

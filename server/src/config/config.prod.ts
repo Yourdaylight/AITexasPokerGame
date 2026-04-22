@@ -110,6 +110,13 @@ export default (appInfo: MidwayAppInfo) => {
     },
   };
 
+  // AI config
+  config.ai = {
+    apiUrl: process.env.AI_API_URL || 'https://api.minimaxi.com/v1/chat/completions',
+    apiKey: process.env.AI_API_KEY || '',
+    model: process.env.AI_MODEL || 'MiniMax-M2.7',
+  };
+
   return {
     ...bizConfig,
     ...config,

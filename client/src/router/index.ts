@@ -6,6 +6,7 @@ import Game from '../views/game.vue';
 import Home from '../views/home.vue';
 import Login from '../views/login.vue';
 import Register from '../views/register.vue';
+import AdminPanel from '../views/AdminPanel.vue';
 
 Vue.use(VueRouter);
 
@@ -36,6 +37,15 @@ const routes: RouteConfig[] = [
     },
   },
   {
+    path: '/admin',
+    name: 'admin',
+    component: AdminPanel,
+    meta: {
+      title: 'admin',
+      needLogin: true,
+    },
+  },
+  {
     path: '/game/:roomNumber/:isOwner?',
     name: 'game',
     component: Game,
@@ -59,6 +69,7 @@ router.beforeEach(async (to: any, from, next) => {
       const result = await service.checkLogin();
       console.log(result);
       cookie.set('user_id', result.data.userId);
+      localStorage.setItem('isAdmin', result.data.isAdmin || '0');
       next();
     } catch (e) {
       await router.replace({ name: 'login' });
