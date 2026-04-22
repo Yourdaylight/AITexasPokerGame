@@ -11,4 +11,6 @@ npm-debug.*
 .vscode/
 nohup.out
 .github/
+*.db
+AI_TEST_CASES.md
 
