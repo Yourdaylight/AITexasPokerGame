@@ -30,6 +30,8 @@ export interface IPlayer {
   raiseCountAtPreFlop: number;
   /** 本局游戏中是否站起过（用于换座惩罚判定） */
   hasStoodUp: boolean;
+  /** 站起前所在的座位位置（用于判断是否为换座） */
+  lastPosition?: number;
 }
 
 export enum ECommand {

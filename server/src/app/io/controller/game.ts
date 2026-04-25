@@ -133,7 +133,9 @@ class GameController extends BaseSocketController {
                   sit.player!.actionSize = 0;
                   sit.player!.type = '';
                   player.hasStoodUp = false;
+                  player.lastPosition = undefined;
                   sit.player!.hasStoodUp = false;
+                  sit.player!.lastPosition = undefined;
                 }
               });
               console.log('allPlayer =================== game over', roomInfo.game.allPlayer);
@@ -289,6 +291,7 @@ class GameController extends BaseSocketController {
       roomInfo.players.forEach((p) => {
         p.status = 0;
         p.hasStoodUp = false;
+        p.lastPosition = undefined;
       });
       console.log('sit =======', roomInfo.sit);
       console.log('roomInfo =======', roomInfo);
@@ -437,51 +440,63 @@ class GameController extends BaseSocketController {
       // Check for seat-change penalty during an active game
       if (roomInfo.game) {
         const player = roomInfo.players.find((p: IPlayer) => p.userId === userInfo.userId);
-        if (player && player.hasStoodUp) {
-          // Count other seated players with chips
-          const otherSeatedPlayers = roomInfo.sit.filter(
-            (s) => s.player && s.player.userId !== userInfo.userId && s.player.counter > 0
-          );
-          const penaltyPerPlayer = 50;
-          const totalPenalty = otherSeatedPlayers.length * penaltyPerPlayer;
+        // Find the target position the player is trying to sit at
+        const targetSit = sitList.find((s: ISit) => s.player && s.player.userId === userInfo.userId);
+        const targetPosition = targetSit ? targetSit.position : undefined;
 
-          if (player.counter < totalPenalty) {
-            // Not enough chips to pay penalty - reject sit down
+        if (player && player.hasStoodUp && targetPosition !== undefined) {
+          // If sitting back at the original position, no penalty
+          if (player.lastPosition === targetPosition) {
+            // Clear flags and proceed normally
+            player.hasStoodUp = false;
+            player.lastPosition = undefined;
+          } else {
+            // Count other seated players with chips
+            const otherSeatedPlayers = roomInfo.sit.filter(
+              (s) => s.player && s.player.userId !== userInfo.userId && s.player.counter > 0
+            );
+            const penaltyPerPlayer = 50;
+            const totalPenalty = otherSeatedPlayers.length * penaltyPerPlayer;
+
+            if (player.counter < totalPenalty) {
+              // Not enough chips to pay penalty - reject sit down
+              this.adapter(Online, OnlineAction.SitDownPenalty, {
+                userId: userInfo.userId,
+                penaltyRequired: totalPenalty,
+                playerCounter: player.counter,
+                rejected: true,
+              });
+              return;
+            }
+
+            // Deduct penalty from the re-sitting player
+            player.counter -= totalPenalty;
+
+            // Distribute 50 to each other seated player
+            otherSeatedPlayers.forEach((s) => {
+              // Update in roomInfo.players (source of truth)
+              const p = roomInfo.players.find((rp) => rp.userId === s.player!.userId);
+              if (p) {
+                p.counter += penaltyPerPlayer;
+                // Sync counter to sit player (may be different object after JSON deserialization)
+                s.player!.counter = p.counter;
+              }
+            });
+
+            // Clear the stood-up flag
+            player.hasStoodUp = false;
+            player.lastPosition = undefined;
+
+            // Notify all players about the penalty
             this.adapter(Online, OnlineAction.SitDownPenalty, {
               userId: userInfo.userId,
-              penaltyRequired: totalPenalty,
-              playerCounter: player.counter,
-              rejected: true,
+              nickName: userInfo.nickName,
+              penaltyPerPlayer,
+              totalPenalty,
+              recipientCount: otherSeatedPlayers.length,
+              rejected: false,
             });
-            return;
           }
-
-          // Deduct penalty from the re-sitting player
-          player.counter -= totalPenalty;
-
-          // Distribute 50 to each other seated player
-          otherSeatedPlayers.forEach((s) => {
-            // Update in roomInfo.players (source of truth)
-            const p = roomInfo.players.find((rp) => rp.userId === s.player!.userId);
-            if (p) {
-              p.counter += penaltyPerPlayer;
-              // Sync counter to sit player (may be different object after JSON deserialization)
-              s.player!.counter = p.counter;
-            }
-          });
-
-          // Clear the stood-up flag
-          player.hasStoodUp = false;
-
-          // Notify all players about the penalty
-          this.adapter(Online, OnlineAction.SitDownPenalty, {
-            userId: userInfo.userId,
-            nickName: userInfo.nickName,
-            penaltyPerPlayer,
-            totalPenalty,
-            recipientCount: otherSeatedPlayers.length,
-            rejected: false,
-          });
         }
       }
 
@@ -502,6 +517,11 @@ class GameController extends BaseSocketController {
       const isGaming = !!roomInfo.game;
       roomInfo.sit.forEach((s: ISit) => {
         if (s.player && s.player.userId === userInfo.userId) {
+          // Record last position before standing up
+          const player = roomInfo.players.find((p: IPlayer) => p.userId === userInfo.userId);
+          if (player) {
+            player.lastPosition = s.position;
+          }
           delete s.player;
         }
       });

@@ -222,18 +222,30 @@ export default class SitList extends Vue {
       }
       // Check if player stood up during this game (seat-change penalty)
       if (this.currPlayer.hasStoodUp && this.isPlay) {
-        const otherSeatedCount = this.sitList.filter(
-          (s) => s.player && s.player.userId !== this.currPlayer?.userId && s.player.counter > 0
-        ).length;
-        const totalPenalty = otherSeatedCount * 50;
-        if (this.currPlayer.counter < totalPenalty) {
-          this.showBuyIn = true;
-          this.currSit = sit;
-          return;
-        }
-        const confirmed = confirm(`换座需要向其他${otherSeatedCount}位玩家各支付50积分（共${totalPenalty}积分），确认坐下？`);
-        if (!confirmed) {
-          return;
+        // If sitting back at the original position, no penalty
+        if (this.currPlayer.lastPosition === sit.position) {
+          // Proceed normally without penalty
+        } else {
+          const otherSeatedCount = this.sitList.filter(
+            (s) => s.player && s.player.userId !== this.currPlayer?.userId && s.player.counter > 0
+          ).length;
+          const totalPenalty = otherSeatedCount * 50;
+          if (this.currPlayer.counter < totalPenalty) {
+            this.showBuyIn = true;
+            this.currSit = sit;
+            return;
+          }
+          const confirmed = confirm(`换座需要向其他${otherSeatedCount}位玩家各支付50积分（共${totalPenalty}积分），确认坐下？`);
+          if (!confirmed) {
+            // If cancelled and original seat is empty, automatically sit back
+            if (this.currPlayer.lastPosition !== undefined && this.currPlayer.lastPosition !== sit.position) {
+              const originalSit = this.sitList.find((s) => s.position === this.currPlayer?.lastPosition);
+              if (originalSit && !originalSit.player) {
+                this.sitDown(originalSit);
+              }
+            }
+            return;
+          }
         }
       }
       let sitNode = this.sitLinkNode;

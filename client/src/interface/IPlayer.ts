@@ -26,4 +26,6 @@ export interface IPlayer {
   raiseCountAtPreFlop: number;
   /** 本局游戏中是否站起过 */
   hasStoodUp: boolean;
+  /** 站起前所在的座位位置 */
+  lastPosition?: number;
 }
