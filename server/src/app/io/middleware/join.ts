@@ -62,6 +62,7 @@ export default () => {
         walksCountAtPreFlop: 0,
         winCountAtPreFlop: 0,
         raiseCountAtPreFlop: 0,
+        hasStoodUp: false,
       };
 
       if (!cachedRoom) {

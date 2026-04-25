@@ -220,6 +220,21 @@ export default class SitList extends Vue {
         this.currSit = sit;
         return;
       }
+      // Check if player stood up during this game (seat-change penalty)
+      if (this.currPlayer.hasStoodUp && this.isPlay) {
+        const otherSeatedCount = this.sitList.filter(
+          (s) => s.player && s.player.userId !== this.currPlayer?.userId && s.player.counter > 0
+        ).length;
+        const totalPenalty = otherSeatedCount * 50;
+        if (this.currPlayer.counter < totalPenalty) {
+          this.$plugin.toast(`积分不足！换座需要支付 ${totalPenalty} 积分（${otherSeatedCount}人 x 50）`);
+          return;
+        }
+        const confirmed = confirm(`换座需要向其他${otherSeatedCount}位玩家各支付50积分（共${totalPenalty}积分），确认坐下？`);
+        if (!confirmed) {
+          return;
+        }
+      }
       let sitNode = this.sitLinkNode;
       for (let i = 0; i < 10; i++) {
         if (sitNode) {

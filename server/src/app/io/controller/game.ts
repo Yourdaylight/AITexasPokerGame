@@ -132,6 +132,8 @@ class GameController extends BaseSocketController {
                   sit.player!.actionCommand = '';
                   sit.player!.actionSize = 0;
                   sit.player!.type = '';
+                  player.hasStoodUp = false;
+                  sit.player!.hasStoodUp = false;
                 }
               });
               console.log('allPlayer =================== game over', roomInfo.game.allPlayer);
@@ -286,6 +288,7 @@ class GameController extends BaseSocketController {
       // init player status
       roomInfo.players.forEach((p) => {
         p.status = 0;
+        p.hasStoodUp = false;
       });
       console.log('sit =======', roomInfo.sit);
       console.log('roomInfo =======', roomInfo);
@@ -428,9 +431,59 @@ class GameController extends BaseSocketController {
     try {
       const { payload } = this.message;
       const sitList = payload.sitList;
+      const userInfo: IPlayer = await this.getUserInfo();
       const roomInfo = await this.getRoomInfo();
-      console.log('sitList=============', sitList);
-      console.log('roomInfo=============', roomInfo);
+
+      // Check for seat-change penalty during an active game
+      if (roomInfo.game) {
+        const player = roomInfo.players.find((p: IPlayer) => p.userId === userInfo.userId);
+        if (player && player.hasStoodUp) {
+          // Count other seated players with chips
+          const otherSeatedPlayers = roomInfo.sit.filter(
+            (s) => s.player && s.player.userId !== userInfo.userId && s.player.counter > 0
+          );
+          const penaltyPerPlayer = 50;
+          const totalPenalty = otherSeatedPlayers.length * penaltyPerPlayer;
+
+          if (player.counter < totalPenalty) {
+            // Not enough chips to pay penalty - reject sit down
+            this.adapter(Online, OnlineAction.SitDownPenalty, {
+              userId: userInfo.userId,
+              penaltyRequired: totalPenalty,
+              playerCounter: player.counter,
+              rejected: true,
+            });
+            return;
+          }
+
+          // Deduct penalty from the re-sitting player
+          player.counter -= totalPenalty;
+
+          // Distribute 50 to each other seated player
+          otherSeatedPlayers.forEach((s) => {
+            s.player!.counter += penaltyPerPlayer;
+            // Also update in roomInfo.players
+            const p = roomInfo.players.find((rp) => rp.userId === s.player!.userId);
+            if (p) {
+              p.counter += penaltyPerPlayer;
+            }
+          });
+
+          // Clear the stood-up flag
+          player.hasStoodUp = false;
+
+          // Notify all players about the penalty
+          this.adapter(Online, OnlineAction.SitDownPenalty, {
+            userId: userInfo.userId,
+            nickName: userInfo.nickName,
+            penaltyPerPlayer,
+            totalPenalty,
+            recipientCount: otherSeatedPlayers.length,
+            rejected: false,
+          });
+        }
+      }
+
       roomInfo.sit = sitList;
       this.adapter(Online, OnlineAction.SitList, {
         sitList,
@@ -445,11 +498,19 @@ class GameController extends BaseSocketController {
       console.log('stand up');
       const userInfo: IPlayer = await this.getUserInfo();
       const roomInfo = await this.getRoomInfo();
+      const isGaming = !!roomInfo.game;
       roomInfo.sit.forEach((s: ISit) => {
         if (s.player && s.player.userId === userInfo.userId) {
           delete s.player;
         }
       });
+      // Mark player as having stood up during a game (for seat-change penalty)
+      if (isGaming) {
+        const player = roomInfo.players.find((p: IPlayer) => p.userId === userInfo.userId);
+        if (player) {
+          player.hasStoodUp = true;
+        }
+      }
       await this.updateGameInfo();
     } catch (e) {
       console.log(e);

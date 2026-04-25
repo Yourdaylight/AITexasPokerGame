@@ -28,6 +28,8 @@ export interface IPlayer {
   winCountAtPreFlop: number;
   /** 翻前raise的次数 */
   raiseCountAtPreFlop: number;
+  /** 本局游戏中是否站起过（用于换座惩罚判定） */
+  hasStoodUp: boolean;
 }
 
 export enum ECommand {

@@ -706,6 +706,17 @@ export default class Game extends Vue {
         }
       }
 
+      if (msg.action === OnlineAction.SitDownPenalty) {
+        const data = msg.data;
+        if (data.rejected) {
+          if (data.userId === this.userInfo.userId) {
+            this.$plugin.toast(`积分不足！换座需要 ${data.penaltyRequired} 积分`);
+          }
+        } else {
+          this.$plugin.toast(`${data.nickName} 换座支付了 ${data.totalPenalty} 积分（${data.recipientCount}人 x ${data.penaltyPerPlayer}）`);
+        }
+      }
+
       if (msg.action === OnlineAction.Broadcast) {
         if (msg.message.msg) {
           this.messageList.push({

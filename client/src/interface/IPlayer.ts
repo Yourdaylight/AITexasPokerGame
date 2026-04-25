@@ -24,4 +24,6 @@ export interface IPlayer {
   actionCountAtPreFlop: number;
   winCountAtPreFlop: number;
   raiseCountAtPreFlop: number;
+  /** 本局游戏中是否站起过 */
+  hasStoodUp: boolean;
 }

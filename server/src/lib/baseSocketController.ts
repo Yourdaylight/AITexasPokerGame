@@ -122,6 +122,7 @@ export default class BaseSocketController extends Controller {
               walksCountAtPreFlop: currPlayer?.walksCountAtPreFlop || p.walksCountAtPreFlop,
               winCountAtPreFlop: currPlayer?.winCountAtPreFlop || p.winCountAtPreFlop,
               raiseCountAtPreFlop: currPlayer?.raiseCountAtPreFlop || p.raiseCountAtPreFlop,
+              hasStoodUp: p.hasStoodUp || false,
             },
             {},
           );

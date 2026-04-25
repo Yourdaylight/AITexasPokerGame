@@ -22,6 +22,8 @@ export enum OnlineAction {
   /** 代表第一把开局的游戏 */
   FirstGame = 'firstGame',
   ShowCard = 'showCard',
+  /** 换座坐下惩罚通知 */
+  SitDownPenalty = 'sitDownPenalty',
 }
 
 /**
