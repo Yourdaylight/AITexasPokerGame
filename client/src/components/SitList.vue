@@ -227,7 +227,8 @@ export default class SitList extends Vue {
         ).length;
         const totalPenalty = otherSeatedCount * 50;
         if (this.currPlayer.counter < totalPenalty) {
-          this.$plugin.toast(`积分不足！换座需要支付 ${totalPenalty} 积分（${otherSeatedCount}人 x 50）`);
+          this.showBuyIn = true;
+          this.currSit = sit;
           return;
         }
         const confirmed = confirm(`换座需要向其他${otherSeatedCount}位玩家各支付50积分（共${totalPenalty}积分），确认坐下？`);

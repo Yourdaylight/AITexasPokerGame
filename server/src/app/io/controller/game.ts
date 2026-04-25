@@ -461,11 +461,12 @@ class GameController extends BaseSocketController {
 
           // Distribute 50 to each other seated player
           otherSeatedPlayers.forEach((s) => {
-            s.player!.counter += penaltyPerPlayer;
-            // Also update in roomInfo.players
+            // Update in roomInfo.players (source of truth)
             const p = roomInfo.players.find((rp) => rp.userId === s.player!.userId);
             if (p) {
               p.counter += penaltyPerPlayer;
+              // Sync counter to sit player (may be different object after JSON deserialization)
+              s.player!.counter = p.counter;
             }
           });
 
