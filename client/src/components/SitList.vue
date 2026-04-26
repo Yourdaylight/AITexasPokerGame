@@ -6,7 +6,7 @@
         <div class="default" v-show="!sit.player">
           <i>sit</i>
         </div>
-        <div class="sit-number">NO.{{ key + 1 }}</div>
+        <div class="sit-number">NO.{{ sit.position }}</div>
         <div class="sit-player" v-if="sit.player">
           <div class="player" :class="{ fold: sit.player.status === -1 }" :data-player-id="sit.player.userId">
             <div class="count-down" v-show="actionUserId === sit.player.userId">{{ time }}</div>
@@ -36,8 +36,8 @@
             <div class="action-command" v-show="sit.player.actionCommand">
               {{ sit.player.actionCommand }}
             </div>
-            <div class="type" v-show="sit.player.type">
-              {{ sit.player.type }}
+            <div class="position-label" v-show="sit.player.type" :class="'position-label--' + sit.player.type">
+              {{ positionLabel(sit.player.type) }}
             </div>
             <div
               class="hand-card"
@@ -137,6 +137,15 @@ export default class SitList extends Vue {
 
   public showHandCard(sit: ISit) {
     return sit.player?.userId === this.currPlayer?.userId;
+  }
+
+  public positionLabel(type: string) {
+    const labels: Record<string, string> = {
+      d: 'D',
+      sb: 'SB',
+      bb: 'BB',
+    };
+    return labels[type] || type;
   }
 
   public PokeStyle(cards: string[]) {
@@ -440,19 +449,31 @@ export default class SitList extends Vue {
           margin-top: 4px;
         }
 
-        .type {
-          background-color: #fff;
-          color: #2b2b2b;
-          border-radius: 50%;
-          padding: 2px;
-          width: 15px;
-          height: 15px;
-          line-height: 16px;
+        .position-label {
           position: absolute;
           left: 100%;
           top: 66px;
-          font-size: 12px;
-          transform: scale(0.8);
+          font-size: 10px;
+          font-weight: bold;
+          border-radius: 3px;
+          padding: 1px 4px;
+          line-height: 14px;
+          letter-spacing: 1px;
+        }
+
+        .position-label--d {
+          background: #fff;
+          color: #2b2b2b;
+        }
+
+        .position-label--sb {
+          background: #3498db;
+          color: #fff;
+        }
+
+        .position-label--bb {
+          background: #e67e22;
+          color: #fff;
         }
 
         .action-size {
@@ -512,7 +533,7 @@ export default class SitList extends Vue {
           right: calc(100% - 3px);
         }
 
-        .type {
+        .position-label {
           left: unset;
           right: 100%;
         }
@@ -581,7 +602,7 @@ export default class SitList extends Vue {
           right: calc(100% - 3px);
         }
 
-        .type {
+        .position-label {
           left: unset;
           right: 100%;
         }

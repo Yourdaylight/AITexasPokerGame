@@ -451,9 +451,9 @@ class GameController extends BaseSocketController {
             player.hasStoodUp = false;
             player.lastPosition = undefined;
           } else {
-            // Count other seated players with chips
-            const otherSeatedPlayers = roomInfo.sit.filter(
-              (s) => s.player && s.player.userId !== userInfo.userId && s.player.counter > 0
+            // Count other seated players with chips (from sitList, the latest data)
+            const otherSeatedPlayers = sitList.filter(
+              (s: ISit) => s.player && s.player.userId !== userInfo.userId && s.player.counter > 0
             );
             const penaltyPerPlayer = 50;
             const totalPenalty = otherSeatedPlayers.length * penaltyPerPlayer;
@@ -469,17 +469,21 @@ class GameController extends BaseSocketController {
               return;
             }
 
-            // Deduct penalty from the re-sitting player
+            // Deduct penalty from the re-sitting player (roomInfo.players)
             player.counter -= totalPenalty;
+            // Also update in sitList so the broadcast has correct data
+            if (targetSit && targetSit.player) {
+              targetSit.player.counter = player.counter;
+            }
 
             // Distribute 50 to each other seated player
-            otherSeatedPlayers.forEach((s) => {
+            otherSeatedPlayers.forEach((sitEntry: ISit) => {
               // Update in roomInfo.players (source of truth)
-              const p = roomInfo.players.find((rp) => rp.userId === s.player!.userId);
+              const p = roomInfo.players.find((rp) => rp.userId === sitEntry.player!.userId);
               if (p) {
                 p.counter += penaltyPerPlayer;
-                // Sync counter to sit player (may be different object after JSON deserialization)
-                s.player!.counter = p.counter;
+                // Sync counter to sitList (will be broadcast)
+                sitEntry.player!.counter = p.counter;
               }
             });
 
@@ -487,15 +491,9 @@ class GameController extends BaseSocketController {
             player.hasStoodUp = false;
             player.lastPosition = undefined;
 
-            // Notify all players about the penalty
-            this.adapter(Online, OnlineAction.SitDownPenalty, {
-              userId: userInfo.userId,
-              nickName: userInfo.nickName,
-              penaltyPerPlayer,
-              totalPenalty,
-              recipientCount: otherSeatedPlayers.length,
-              rejected: false,
-            });
+            // Broadcast penalty message to all players (uses the danmu system)
+            const penaltyMsg = `${userInfo.nickName}:换座支付${totalPenalty}积分（${otherSeatedPlayers.length}人×${penaltyPerPlayer}）`;
+            this.adapter(Online, OnlineAction.Broadcast, { msg: penaltyMsg });
           }
         }
       }

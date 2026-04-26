@@ -30,7 +30,11 @@
         {{ latestSpecialActionMsg }}
       </animation>
       <div class="game-body">
-        <div class="pot">pot: {{ pot }}(Max:{{ maxPot }})</div>
+        <div class="pot">
+          <i class="pot-icon"></i>
+          <span class="pot-value">{{ pot }}</span>
+          <span class="pot-max" v-if="maxPot">/ {{ maxPot }}</span>
+        </div>
         <div class="roomId">No.:{{ roomId }}</div>
         <div class="btn play" v-show="isOwner && !isPlay">
           <span @click="play">play game</span>
@@ -958,10 +962,45 @@ export default class Game extends Vue {
 
     .game-body {
       z-index: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      .pot {
+        display: flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 16px;
+        padding: 4px 14px;
+        border: 1px solid rgba(255, 215, 0, 0.3);
+
+        .pot-icon {
+          display: inline-block;
+          width: 20px;
+          height: 20px;
+          background: url('../assets/icon/gold.svg') center no-repeat;
+          background-size: contain;
+          margin-right: 6px;
+        }
+
+        .pot-value {
+          color: #FFD700;
+          font-weight: bold;
+          font-size: 16px;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        .pot-max {
+          color: rgba(255, 255, 255, 0.5);
+          font-size: 12px;
+          margin-left: 4px;
+        }
+      }
 
       .roomId {
         margin-top: 10px;
         font-size: 14px;
+        color: rgba(255, 255, 255, 0.6);
       }
     }
 

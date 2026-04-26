@@ -9,12 +9,12 @@
         </div>
       </div>
       <div class="action-type">
-        <span class="action-btn action-btn--fold" @click="action('fold')">fold</span>
-        <span class="action-btn" @click="action('check')" v-show="showActionBtn('check')">check</span>
-        <span class="action-btn" @click="action('call')" v-show="showActionBtn('call')">call</span>
-        <span class="action-btn" @click="otherSizeHandle()" v-show="showActionBtn('raise')">more</span>
+        <span class="action-btn action-btn--fold" @click="action('fold')">FOLD</span>
+        <span class="action-btn action-btn--check" @click="action('check')" v-show="showActionBtn('check')">CHECK</span>
+        <span class="action-btn action-btn--call" @click="action('call')" v-show="showActionBtn('call')">CALL</span>
+        <span class="action-btn action-btn--raise" @click="otherSizeHandle()" v-show="showActionBtn('raise')">RAISE</span>
         <span class="action-btn action-btn--allin" @dblclick="action('allin')" v-show="!showActionBtn('raise')">
-          ALLIN
+          ALL IN
         </span>
       </div>
     </div>
@@ -212,18 +212,24 @@ export default class Action extends Vue {
 
       i {
         padding: 2px;
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         display: inline-block;
         font-style: normal;
         font-size: 10px;
-        line-height: 24px;
+        font-weight: bold;
+        line-height: 28px;
         border-radius: 50%;
         color: #fff;
-        border: 1px solid #fff;
-        background: rgba(0, 0, 0, 0.2);
-        margin: 10px;
+        border: 2px solid #f1c40f;
+        background: rgba(180, 140, 20, 0.7);
+        margin: 6px;
         vertical-align: middle;
+        cursor: pointer;
+
+        &:active {
+          background: rgba(241, 196, 15, 0.9);
+        }
       }
     }
 
@@ -232,28 +238,60 @@ export default class Action extends Vue {
     }
 
     .action-btn {
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      padding: 2px;
+      border-radius: 20px;
+      min-width: 52px;
+      height: 34px;
+      padding: 0 12px;
       text-align: center;
-      margin: 0 10px;
-      line-height: 40px;
-      border: 1px solid #fff;
-      font-size: 14px;
+      margin: 0 5px;
+      line-height: 34px;
+      font-size: 12px;
+      font-weight: bold;
       display: inline-block;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: transform 0.1s, box-shadow 0.2s;
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+
+    .action-btn--fold {
+      background: rgba(180, 40, 40, 0.85);
+      color: #fff;
+      border: 2px solid #e74c3c;
+      box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+    }
+
+    .action-btn--check {
+      background: rgba(30, 130, 76, 0.85);
+      color: #fff;
+      border: 2px solid #27ae60;
+      box-shadow: 0 2px 8px rgba(39, 174, 96, 0.4);
+    }
+
+    .action-btn--call {
+      background: rgba(30, 130, 76, 0.85);
+      color: #fff;
+      border: 2px solid #2ecc71;
+      box-shadow: 0 2px 8px rgba(46, 204, 113, 0.4);
+    }
+
+    .action-btn--raise {
+      background: rgba(180, 140, 20, 0.85);
+      color: #fff;
+      border: 2px solid #f1c40f;
+      box-shadow: 0 2px 8px rgba(241, 196, 15, 0.4);
     }
 
     .action-btn--allin {
-      border: thick double red;
-      color: red;
-      font-weight: bold;
-    }
-
-    .action-btn--fold{
-      border: thick double rgb(134, 1, 1);
-      color: rgb(134, 1, 1);
-      font-weight: bold;
+      background: rgba(180, 20, 20, 0.9);
+      color: #fff;
+      border: 2px solid #ff4444;
+      box-shadow: 0 0 12px rgba(255, 68, 68, 0.6), 0 0 24px rgba(255, 68, 68, 0.3);
+      animation: allinPulse 1.5s ease-in-out infinite;
     }
   }
 
@@ -295,18 +333,28 @@ export default class Action extends Vue {
 
       .btn {
         display: inline-block;
-        color: white;
+        color: #fff;
         margin-top: 220px;
-        border: 1px solid #fff;
-        border-radius: 50%;
-        background-color: rgba(0, 0, 0, 0.4);
-        padding: 5px;
-        font-size: 30px;
-        width: 50px;
-        height: 50px;
-        line-height: 50px;
+        border: 2px solid #f1c40f;
+        border-radius: 20px;
+        background: rgba(180, 140, 20, 0.85);
+        padding: 5px 16px;
+        font-size: 18px;
+        font-weight: bold;
+        min-width: 52px;
+        height: 34px;
+        line-height: 34px;
       }
     }
+  }
+}
+
+@keyframes allinPulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(255, 68, 68, 0.6), 0 0 24px rgba(255, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 68, 68, 0.8), 0 0 40px rgba(255, 68, 68, 0.5);
   }
 }
 </style>
