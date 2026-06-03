@@ -211,24 +211,30 @@ export default class Action extends Vue {
       white-space: nowrap;
 
       i {
-        padding: 2px;
-        width: 28px;
-        height: 28px;
+        width: 36px;
+        height: 36px;
         display: inline-block;
         font-style: normal;
-        font-size: 10px;
+        font-size: 11px;
         font-weight: bold;
-        line-height: 28px;
+        line-height: 36px;
         border-radius: 50%;
-        color: #fff;
-        border: 2px solid #f1c40f;
-        background: rgba(180, 140, 20, 0.7);
+        color: var(--accent-gold);
+        border: 1px solid var(--border-medium);
+        background: var(--bg-glass);
+        backdrop-filter: blur(4px);
         margin: 6px;
         vertical-align: middle;
         cursor: pointer;
+        transition: all var(--transition-fast);
+
+        &:hover {
+          border-color: var(--accent-gold);
+          background: var(--accent-gold-dim);
+        }
 
         &:active {
-          background: rgba(241, 196, 15, 0.9);
+          transform: scale(0.95);
         }
       }
     }
@@ -238,20 +244,21 @@ export default class Action extends Vue {
     }
 
     .action-btn {
-      border-radius: 20px;
-      min-width: 52px;
-      height: 34px;
+      border-radius: var(--radius-md);
+      min-width: 64px;
+      height: 40px;
       padding: 0 12px;
       text-align: center;
       margin: 0 5px;
-      line-height: 34px;
-      font-size: 12px;
+      line-height: 40px;
+      font-size: 13px;
       font-weight: bold;
       display: inline-block;
       cursor: pointer;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
       transition: transform 0.1s, box-shadow 0.2s;
+      backdrop-filter: blur(4px);
 
       &:active {
         transform: scale(0.95);
@@ -259,38 +266,38 @@ export default class Action extends Vue {
     }
 
     .action-btn--fold {
-      background: rgba(180, 40, 40, 0.85);
+      background: var(--accent-red-bg);
       color: #fff;
-      border: 2px solid #e74c3c;
-      box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+      border: 1px solid rgba(231, 76, 60, 0.5);
+      box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
     }
 
     .action-btn--check {
-      background: rgba(30, 130, 76, 0.85);
+      background: rgba(39, 174, 96, 0.15);
       color: #fff;
-      border: 2px solid #27ae60;
-      box-shadow: 0 2px 8px rgba(39, 174, 96, 0.4);
+      border: 1px solid rgba(39, 174, 96, 0.5);
+      box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
     }
 
     .action-btn--call {
-      background: rgba(30, 130, 76, 0.85);
+      background: rgba(39, 174, 96, 0.15);
       color: #fff;
-      border: 2px solid #2ecc71;
-      box-shadow: 0 2px 8px rgba(46, 204, 113, 0.4);
+      border: 1px solid rgba(39, 174, 96, 0.5);
+      box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
     }
 
     .action-btn--raise {
-      background: rgba(180, 140, 20, 0.85);
+      background: var(--accent-gold-dim);
       color: #fff;
-      border: 2px solid #f1c40f;
-      box-shadow: 0 2px 8px rgba(241, 196, 15, 0.4);
+      border: 1px solid var(--accent-gold-border);
+      box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
     }
 
     .action-btn--allin {
-      background: rgba(180, 20, 20, 0.9);
+      background: rgba(231, 76, 60, 0.25);
       color: #fff;
-      border: 2px solid #ff4444;
-      box-shadow: 0 0 12px rgba(255, 68, 68, 0.6), 0 0 24px rgba(255, 68, 68, 0.3);
+      border: 1px solid var(--accent-red);
+      box-shadow: 0 0 8px rgba(231, 76, 60, 0.3);
       animation: allinPulse 1.5s ease-in-out infinite;
     }
   }
@@ -310,7 +317,8 @@ export default class Action extends Vue {
       height: 100%;
       z-index: 8;
       overflow: hidden;
-      background: linear-gradient(-70deg, black, transparent);
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
     }
 
     .action-other-size-body {
@@ -324,26 +332,46 @@ export default class Action extends Vue {
       .size {
         input {
           background: transparent;
-          font-size: 20px;
-          width: 50px;
+          border: none;
+          border-bottom: 2px solid var(--border-medium);
+          color: var(--accent-gold);
+          font-size: 24px;
+          font-weight: 700;
+          width: 80px;
           text-align: center;
-          color: #fff;
+          outline: none;
+          transition: border-color var(--transition-fast);
+
+          &:focus {
+            border-bottom-color: var(--accent-gold);
+          }
         }
       }
 
       .btn {
         display: inline-block;
-        color: #fff;
+        color: #0a0a0a;
         margin-top: 220px;
-        border: 2px solid #f1c40f;
-        border-radius: 20px;
-        background: rgba(180, 140, 20, 0.85);
-        padding: 5px 16px;
-        font-size: 18px;
-        font-weight: bold;
-        min-width: 52px;
-        height: 34px;
-        line-height: 34px;
+        border: 1px solid var(--accent-gold-border);
+        border-radius: var(--radius-full);
+        background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-light) 100%);
+        padding: 8px 24px;
+        font-size: 16px;
+        font-weight: 700;
+        min-width: 64px;
+        line-height: 24px;
+        cursor: pointer;
+        box-shadow: var(--shadow-gold);
+        transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 24px rgba(212, 175, 55, 0.35);
+        }
+
+        &:active {
+          transform: scale(0.97);
+        }
       }
     }
   }
@@ -351,10 +379,10 @@ export default class Action extends Vue {
 
 @keyframes allinPulse {
   0%, 100% {
-    box-shadow: 0 0 12px rgba(255, 68, 68, 0.6), 0 0 24px rgba(255, 68, 68, 0.3);
+    box-shadow: 0 0 8px rgba(231, 76, 60, 0.3);
   }
   50% {
-    box-shadow: 0 0 20px rgba(255, 68, 68, 0.8), 0 0 40px rgba(255, 68, 68, 0.5);
+    box-shadow: 0 0 16px rgba(231, 76, 60, 0.5);
   }
 }
 </style>

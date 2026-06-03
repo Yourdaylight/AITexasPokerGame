@@ -31,10 +31,10 @@ export default {
           body: {},
         });
       },
-  createRoom: (isShort: boolean, smallBlind: number, time: number) =>
+  createRoom: (isShort: boolean, smallBlind: number, time: number, botConfig?: any) =>
     request({
       url: '/game/room',
-      body: { isShort, smallBlind, time },
+      body: { isShort, smallBlind, time, ...botConfig },
     }),
   findRoom: (roomNumber: string) =>
     request({
@@ -141,6 +141,45 @@ export default {
       onError(err.message || 'fetch error');
     });
     return { abort: () => {} };
+  },
+  // AI Advisor with PokerSkill - SSE streaming
+  getAIAdvisor: (data: any, onMessage: (chunk: string) => void, onError: (err: string) => void, onClose: () => void) => {
+    const token = cookie.get('token') || localStorage.getItem('token');
+    const url = `${origin.urls[0]}/node/ai/advisor`;
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    }).then(response => {
+      const reader = response.body?.getReader();
+      if (!reader) { onError('No response body'); return; }
+      const decoder = new TextDecoder();
+      let buffer = '';
+      function read() {
+        reader!.read().then(({ done, value }) => {
+          if (done) { onClose(); return; }
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith('data:')) continue;
+            const jsonStr = trimmed.slice(5).trim();
+            if (jsonStr === '[DONE]') { onClose(); return; }
+            try {
+              const parsed = JSON.parse(jsonStr);
+              if (parsed.error) { onError(parsed.error); return; }
+              if (parsed.delta) onMessage(parsed.delta);
+            } catch (e) { /* skip non-JSON */ }
+          }
+          read();
+        }).catch(err => { onError(err.message || 'Stream error'); });
+      }
+      read();
+    }).catch(err => { onError(err.message || 'Request failed'); });
   },
   compressAIContext: (data: any) =>
     request({

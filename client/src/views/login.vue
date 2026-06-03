@@ -5,7 +5,7 @@
     </div>
     <div class="login-body">
       <div class="logo-area">
-        <div class="logo-icon">♠♥</div>
+        <div class="logo-icon">&#x2660;&#x2665;</div>
         <div class="name">Texas Poker</div>
         <div class="subtitle">Join the Table</div>
       </div>
@@ -72,7 +72,7 @@ export default class Login extends Vue {
 </script>
 <style lang="less" scoped>
 .login-container {
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0a0a0a 0%, #0a3d28 50%, #0d2e1e 100%);
   width: 100vw;
   height: 100vh;
   box-sizing: border-box;
@@ -102,15 +102,15 @@ export default class Login extends Vue {
   }
 
   .login-body {
-    width: 85vw;
-    max-width: 420px;
+    width: 90vw;
+    max-width: 400px;
     margin: auto;
     border-radius: 16px;
     box-sizing: border-box;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 60px rgba(212, 175, 55, 0.08);
-    background: rgba(20, 20, 35, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(212, 175, 55, 0.2);
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-medium);
+    box-shadow: var(--shadow-md), var(--shadow-gold);
     padding: 40px 30px;
     z-index: 1;
 
@@ -150,8 +150,8 @@ export default class Login extends Vue {
       transition: all 0.3s ease;
 
       &:focus-within {
-        border-color: rgba(212, 175, 55, 0.7);
-        box-shadow: 0 0 12px rgba(212, 175, 55, 0.15);
+        border-color: var(--accent-gold);
+        box-shadow: var(--shadow-gold);
         background: rgba(255, 255, 255, 0.05);
       }
 
@@ -198,7 +198,7 @@ export default class Login extends Vue {
 
         &:hover {
           background: linear-gradient(135deg, #e5c349, #d4af37);
-          box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+          box-shadow: var(--shadow-gold-lg);
           transform: translateY(-1px);
         }
 

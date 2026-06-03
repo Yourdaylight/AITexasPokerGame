@@ -82,7 +82,7 @@ export default class Notice extends Vue {
     top: 0;
     left: 0;
     width: 100vw;
-    z-index: 999;
+    z-index: 150;
     pointer-events: none;
     i {
       position: absolute;

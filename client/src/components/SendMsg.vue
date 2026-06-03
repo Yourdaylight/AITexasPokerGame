@@ -178,14 +178,18 @@ export default class SendMsg extends Vue {
 .send-msg-container {
   position: fixed;
   z-index: 1;
+
   .send-msg-body {
     position: fixed;
     width: 100vw;
-    height: 25px;
-    padding: 10px 0;
     left: 0;
     bottom: 0;
-    background-color: #fff;
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border-subtle);
+    padding: 10px 12px;
+    height: auto;
+    min-height: 44px;
     font-size: 12px;
     display: flex;
     align-items: center;
@@ -194,7 +198,7 @@ export default class SendMsg extends Vue {
       flex: none;
       width: 40px;
       font-size: 30px;
-      color: #009870;
+      color: var(--accent-gold);
       text-align: center;
     }
 
@@ -211,12 +215,19 @@ export default class SendMsg extends Vue {
       align-items: center;
 
       input {
-        height: 30px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        color: var(--text-primary);
+        height: 36px;
+        padding: 0 12px;
+        font-size: 13px;
         flex: 1;
-        padding: 0 5px;
-        font-size: 12px;
-        border-radius: 4px;
-        background-color: rgba(0, 0, 0, 0.05);
+
+        &:focus {
+          border-color: var(--accent-gold);
+          outline: none;
+        }
       }
 
       .msg-btn {
@@ -227,7 +238,12 @@ export default class SendMsg extends Vue {
         text-align: center;
 
         span {
-          padding: 5px 10px;
+          background: linear-gradient(135deg, var(--accent-gold), #c49b2a);
+          color: #0a0a0a;
+          font-weight: 600;
+          font-size: 13px;
+          border-radius: var(--radius-sm);
+          padding: 6px 16px;
         }
       }
     }
@@ -240,12 +256,14 @@ export default class SendMsg extends Vue {
       max-width: 100%;
       max-height: 80vh;
       margin: 0;
-      border-radius: 4px;
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
       font-size: 16px;
       list-style: none;
       z-index: 2;
-      background-color: rgba(0, 0, 0, 0.65);
-      color: white;
       overflow: auto;
       opacity: 0;
       visibility: hidden;
@@ -259,9 +277,13 @@ export default class SendMsg extends Vue {
       li {
         display: flex;
         align-items: center;
-        color: white;
+        color: var(--text-primary);
         padding: 6px 12px;
         cursor: pointer;
+
+        &:hover {
+          background: var(--bg-hover);
+        }
       }
 
       .preset-content {
@@ -271,8 +293,8 @@ export default class SendMsg extends Vue {
 
       input {
         flex: 1;
-        color: white;
-        background-color: rgba(255, 255, 255, 0.35);
+        background-color: rgba(255, 255, 255, 0.08);
+        color: var(--text-primary);
         border: none;
         border-radius: 4px;
         height: 28px;

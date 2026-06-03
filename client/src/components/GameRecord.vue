@@ -124,11 +124,11 @@ export default class Record extends Vue {
     width: 90vw;
     height: 100vh;
     color: #fff;
-    background: #006a55;
+    background: linear-gradient(180deg, #0d5236 0%, #0a3d28 100%);
     position: absolute;
     right: 0;
     top: 0;
-    z-index: 9999;
+    z-index: 300;
     overflow: hidden;
     transform: translate3d(100vw, 0, 0);
     display: flex;

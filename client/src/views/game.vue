@@ -926,7 +926,7 @@ export default class Game extends Vue {
     }
     // document.addEventListener('visibilitychange', () => {
     //   if (!document.hidden) {
-    //     this.socketInit();
+    //   this.socketInit();
     //   }
     // });
   }
@@ -935,7 +935,14 @@ export default class Game extends Vue {
 
 <style lang="less" scoped>
 .game-container {
-  background: radial-gradient(#00bf86, #006a55);
+  background:
+    /* 顶灯聚光效果 - 桌面中央明亮区域 */
+    radial-gradient(ellipse at 50% 45%, rgba(255, 255, 255, 0.04) 0%, transparent 55%),
+    /* 暖色侧光 - 增加空间层次感 */
+    radial-gradient(ellipse at 20% 80%, rgba(212, 175, 55, 0.04) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 20%, rgba(212, 175, 55, 0.03) 0%, transparent 40%),
+    /* 桌面主体 - 经典绿色毡布 */
+    radial-gradient(ellipse at 50% 50%, #116b47 0%, #0d5236 40%, #0a3d28 70%, #062a1c 100%);
   background-size: 100% 100%;
   height: calc(100% - 45px);
   width: 100vw;
@@ -969,10 +976,12 @@ export default class Game extends Vue {
       .pot {
         display: flex;
         align-items: center;
-        background: rgba(0, 0, 0, 0.4);
-        border-radius: 16px;
-        padding: 4px 14px;
-        border: 1px solid rgba(255, 215, 0, 0.3);
+        background: var(--bg-glass);
+        backdrop-filter: blur(8px);
+        border: 1px solid var(--border-medium);
+        border-radius: var(--radius-full);
+        padding: 6px 18px;
+        box-shadow: var(--shadow-sm);
 
         .pot-icon {
           display: inline-block;
@@ -984,9 +993,9 @@ export default class Game extends Vue {
         }
 
         .pot-value {
-          color: #FFD700;
+          color: var(--accent-gold);
           font-weight: bold;
-          font-size: 16px;
+          font-size: 18px;
           text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
         }
 
@@ -999,8 +1008,34 @@ export default class Game extends Vue {
 
       .roomId {
         margin-top: 10px;
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.6);
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .btn.play {
+        span {
+          display: inline-block;
+          padding: 10px 28px;
+          background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-light) 100%);
+          color: #0a0a0a;
+          font-weight: 700;
+          font-size: 14px;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          border-radius: var(--radius-full);
+          box-shadow: var(--shadow-gold);
+          cursor: pointer;
+          transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+
+          &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(212, 175, 55, 0.3);
+          }
+
+          &:active {
+            transform: scale(0.97);
+          }
+        }
       }
     }
 
@@ -1018,13 +1053,15 @@ export default class Game extends Vue {
   }
 
   .common-cards {
-    margin-top: 30px;
+    margin-top: 16px;
   }
 
   .winner-poke-style {
-    margin-top: 20px;
-    font-size: 14px;
-    color: #fff;
+    margin-top: 12px;
+    font-size: 16px;
+    color: var(--accent-gold);
+    text-shadow: var(--shadow-gold);
+    font-weight: 600;
   }
 
   .setting {
@@ -1060,19 +1097,33 @@ export default class Game extends Vue {
       transform: translate(-50%, -50%);
       z-index: 8;
       width: 60%;
-      // height: 40%;
-      border-radius: 12px;
+      border-radius: var(--radius-md) 0 0 var(--radius-md);
       box-sizing: border-box;
-      background: #fff;
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-medium);
+      box-shadow: var(--shadow-lg);
       padding: 20px;
       overflow-y: auto;
       font-weight: bold;
 
       p {
-        padding: 6px;
+        padding: 12px 20px;
         text-align: left;
+        color: var(--text-primary);
+        transition: background var(--transition-fast);
+
+        &:hover {
+          background: var(--bg-hover);
+        }
+
         &.setting-close {
           text-align: right;
+          color: var(--text-secondary);
+
+          &:hover {
+            color: var(--accent-gold);
+          }
         }
       }
     }

@@ -80,26 +80,26 @@ export default class Card extends Vue {
 <style scoped lang="less">
 .card-container {
   display: inline-flex;
-  gap: 4px;
+  gap: 6px;
 
   .card {
     position: relative;
-    height: 60px;
-    width: 40px;
+    height: 80px;
+    width: 54px;
     transform-style: preserve-3d;
     opacity: 0;
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     z-index: 0;
 
     i {
       background: url('../assets/icon/poke.png');
-      height: 60px;
-      width: 40px;
+      height: 80px;
+      width: 54px;
       background-size: 100% 100%;
       transform: rotateY(0deg) translate3d(0px, 0px, 0px);
       backface-visibility: hidden;
       position: absolute;
-      border-radius: 5px;
+      border-radius: var(--radius-sm);
       top: 0;
       left: 0;
       z-index: 1;
@@ -107,9 +107,9 @@ export default class Card extends Vue {
 
     .card-bg {
       background-size: 100% 100%;
-      height: 60px;
-      width: 40px;
-      border-radius: 5px;
+      height: 80px;
+      width: 54px;
+      border-radius: var(--radius-sm);
       background-color: #fff;
       transform: rotateY(180deg) translate3d(0px, 0px, 0px);
       backface-visibility: hidden;
@@ -119,25 +119,25 @@ export default class Card extends Vue {
       display: flex;
       flex-direction: column;
       transform-style: preserve-3d;
-      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
 
       .shadow {
-        width: 40px;
-        height: 60px;
+        width: 54px;
+        height: 80px;
         left: 0;
         top: 0;
-        border-radius: 5px;
+        border-radius: var(--radius-sm);
         position: absolute;
         z-index: 1;
         background: rgba(0, 0, 0, 0.4);
       }
 
       &.red {
-        color: red;
+        color: #e74c3c;
       }
 
       &.black {
-        color: black;
+        color: #2c3e50;
       }
 
       &.blue {
@@ -151,24 +151,26 @@ export default class Card extends Vue {
       .number {
         text-align: left;
         position: absolute;
-        left: 5px;
-        font-size: 16px;
+        left: 6px;
+        top: 4px;
+        font-size: 18px;
         line-height: 25px;
-        font-family: initial;
+        font-weight: 700;
+        font-family: var(--font-sans);
       }
 
       .color {
         position: absolute;
-        left: 5px;
+        left: 6px;
         top: -2px;
-        font-size: 20px;
+        font-size: 18px;
         line-height: 60px;
         font-family: Arial;
 
         &.big {
-          left: 15px;
-          font-size: 35px;
-          top: 12px;
+          left: 22px;
+          font-size: 42px;
+          top: 16px;
         }
       }
     }
@@ -181,7 +183,7 @@ export default class Card extends Vue {
 
     &.turn {
       animation: turnA 1s forwards;
-      animation-delay: 1s;
+      animation-delay: 0.4s;
     }
   }
 
@@ -191,7 +193,6 @@ export default class Card extends Vue {
     width: 40px;
     /* 假设mini模式下宽度为正常的一半 */
   }
-
 
   .mini-size .number {
     font-size: 8px;

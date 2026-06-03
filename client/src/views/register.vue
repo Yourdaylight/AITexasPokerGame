@@ -158,7 +158,7 @@ export default class Register extends Vue {
 </script>
 <style lang="less" scoped>
 .register-container {
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0a0a0a 0%, #0a3d28 50%, #0d2e1e 100%);
   min-height: 100vh;
   width: 100vw;
   box-sizing: border-box;

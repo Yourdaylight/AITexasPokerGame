@@ -20,6 +20,57 @@
               <input type="checkbox" v-model="isShort" />
             </div>
           </div>
+          <!-- Bot / PokerSkill Config -->
+          <div style="margin-top: 16px; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+            <h3 style="color: var(--accent-gold); font-size: 14px; margin-bottom: 10px;">AI Bot 配置</h3>
+            <div class="input-bd">
+              <div class="input-name">启用AI:</div>
+              <div class="input-text">
+                <input type="checkbox" v-model="enableBots" />
+              </div>
+            </div>
+            <div v-if="enableBots">
+              <div class="input-bd">
+                <div class="input-name">AI数量:</div>
+                <div class="input-text">
+                  <input type="tel" v-model="botCount" min="1" max="8" />
+                </div>
+              </div>
+              <div class="input-bd">
+                <div class="input-name">PokerSkill:</div>
+                <div class="input-text">
+                  <input type="checkbox" v-model="enablePokerSkill" />
+                  <span style="color: var(--text-secondary); font-size: 11px; margin-left: 6px;">
+                    {{ enablePokerSkill ? '策略模式 (P1-P5)' : '基准模式 (P1)' }}
+                  </span>
+                </div>
+              </div>
+              <div class="input-bd">
+                <div class="input-name">AI筹码:</div>
+                <div class="input-text">
+                  <input type="tel" v-model="botChips" />
+                </div>
+              </div>
+              <div class="input-bd">
+                <div class="input-name">LLM API:</div>
+                <div class="input-text">
+                  <input type="text" v-model="botLlmApiUrl" placeholder="https://api.openai.com/v1/chat/completions" />
+                </div>
+              </div>
+              <div class="input-bd">
+                <div class="input-name">API Key:</div>
+                <div class="input-text">
+                  <input type="password" v-model="botLlmApiKey" placeholder="sk-..." />
+                </div>
+              </div>
+              <div class="input-bd">
+                <div class="input-name">模型:</div>
+                <div class="input-text">
+                  <input type="text" v-model="botLlmModel" placeholder="gpt-4o" />
+                </div>
+              </div>
+            </div>
+          </div>
           <div class="btn" @click="createRoom"><span>create</span></div>
         </div>
       </div>
@@ -47,7 +98,7 @@
                 </option>
               </select>
               <button class="btn-icon" @click="newConfig" title="New">+</button>
-              <button class="btn-icon btn-danger" v-if="selectedConfigId" @click="deleteAIConfig" title="Delete">🗑</button>
+              <button class="btn-icon btn-danger" v-if="selectedConfigId" @click="deleteAIConfig" title="Delete">&#x1F5D1;</button>
             </div>
           </div>
           <div class="ai-config-field">
@@ -190,6 +241,16 @@ export default class Home extends Vue {
   public activePreset = 'custom';
   public agentPrompt = '';
   public aiIsDefault = false;
+
+  // Bot / PokerSkill Config
+  public enableBots = false;
+  public botCount = 2;
+  public enablePokerSkill = true;
+  public botLlmApiUrl = '';
+  public botLlmApiKey = '';
+  public botLlmModel = 'gpt-4o';
+  public botChips = 1000;
+
   public aiTesting = false;
   public aiTestStatus = '';
   public aiTestMessage = '';
@@ -447,12 +508,22 @@ export default class Home extends Vue {
 
   public async createRoom() {
     try {
-      const result = await service.createRoom(this.isShort, this.smallBlind, 0);
-      const { roomNumber } = result.data;
-      const roomConfig = {
+      const roomConfig: any = {
         isShort: this.isShort,
         smallBlind: this.smallBlind,
       };
+      // Add Bot/PokerSkill config if enabled
+      if (this.enableBots) {
+        roomConfig.enableBots = true;
+        roomConfig.botCount = Number(this.botCount) || 2;
+        roomConfig.enablePokerSkill = this.enablePokerSkill;
+        roomConfig.botChips = Number(this.botChips) || 1000;
+        if (this.botLlmApiUrl) roomConfig.llmApiUrl = this.botLlmApiUrl;
+        if (this.botLlmApiKey) roomConfig.llmApiKey = this.botLlmApiKey;
+        if (this.botLlmModel) roomConfig.llmModel = this.botLlmModel;
+      }
+      const result = await service.createRoom(this.isShort, this.smallBlind, 0, roomConfig);
+      const { roomNumber } = result.data;
       localStorage.setItem('roomConfig', JSON.stringify(roomConfig));
       cookie.set('roomConfig', roomConfig, { expires: 1 });
       this.$router.push({ name: 'game', params: { roomNumber, isOwner: '1' } });
@@ -561,6 +632,26 @@ export default class Home extends Vue {
   display: flex;
   flex-direction: row;
   align-items: center;
+  background: linear-gradient(180deg, var(--bg-primary) 0%, #0a0a0a 100%);
+  position: relative;
+  overflow: hidden;
+
+  // Subtle background texture using radial gradients
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(212, 175, 55, 0.03) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(212, 175, 55, 0.02) 0%, transparent 40%),
+      radial-gradient(ellipse at 50% 80%, rgba(27, 40, 56, 0.4) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
   .room-config {
     position: absolute;
     width: 100vw;
@@ -571,27 +662,99 @@ export default class Home extends Vue {
       position: fixed;
       left: 0; right: 0; bottom: 0; top: 0;
       z-index: 9;
-      background-color: rgba(0, 0, 0, 0.3);
+      background-color: rgba(0, 0, 0, 0.5);
     }
     .room-config-body {
       position: absolute;
-      background-color: #fff;
-      border-radius: 8px;
       left: 50%; top: 50%;
       z-index: 99;
-      width: 230px;
-      min-height: 200px;
       transform: translate3d(-50%, -50%, 0);
-      h1 { font-size: 16px; text-align: center; line-height: 40px; }
+      background: var(--bg-card);
+      border: 1px solid var(--border-medium);
+      box-shadow: var(--shadow-lg);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      width: 300px;
+      backdrop-filter: blur(12px);
+
+      h1 {
+        color: var(--accent-gold);
+        font-size: 18px;
+        font-weight: 700;
+        text-align: center;
+        line-height: 40px;
+        margin-bottom: 16px;
+      }
+
       .input-bd {
         display: flex;
-        .input-name { width: 70px; text-align: right; flex: none; }
+        align-items: center;
+        margin-bottom: 16px;
+
+        .input-name {
+          width: 80px;
+          text-align: right;
+          flex: none;
+          color: var(--text-secondary);
+          font-size: 13px;
+        }
+
         .input-text {
-          margin-left: 8px; line-height: 30px;
+          margin-left: 12px;
+          flex: 1;
+
           input {
-            width: 100%; display: inline-block; text-align: center; vertical-align: middle;
-            border-bottom: 1px solid #bababa;
-            &[type='checkbox'] { min-width: auto; min-height: auto; }
+            width: 100%;
+            display: inline-block;
+            text-align: center;
+            vertical-align: middle;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: var(--transition-fast);
+
+            &:focus {
+              outline: none;
+              border-color: var(--accent-gold);
+            }
+
+            &[type='checkbox'] {
+              min-width: auto;
+              min-height: auto;
+              width: auto;
+            }
+          }
+        }
+      }
+
+      .btn {
+        margin-top: 8px;
+
+        span {
+          display: block;
+          text-align: center;
+          padding: 12px 0;
+          background: linear-gradient(135deg, var(--accent-gold), #c49b2a);
+          color: #0a0a0a;
+          font-weight: 700;
+          font-size: 15px;
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-gold);
+          transition: var(--transition-normal);
+          cursor: pointer;
+          letter-spacing: 0.5px;
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-gold-lg);
+          }
+
+          &:active {
+            transform: translateY(0);
           }
         }
       }
@@ -613,7 +776,7 @@ export default class Home extends Vue {
     }
     .ai-config-body {
       position: absolute;
-      background: linear-gradient(145deg, #1a1a2e, #16213e);
+      background: linear-gradient(145deg, #0d2e1e, #0a3d28);
       border: 1px solid rgba(212, 175, 55, 0.3);
       border-radius: 12px;
       left: 50%; top: 50%;
@@ -623,6 +786,7 @@ export default class Home extends Vue {
       overflow-y: auto;
       transform: translate3d(-50%, -50%, 0);
       padding: 20px 24px;
+      backdrop-filter: blur(12px);
       h1 {
         color: #d4af37;
         font-size: 18px;
@@ -646,7 +810,7 @@ export default class Home extends Vue {
             padding: 8px 4px;
             background: rgba(255,255,255,0.06);
             border: 1px solid rgba(212, 175, 55, 0.2);
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             color: #ccc;
             font-size: 12px;
             cursor: pointer;
@@ -664,16 +828,17 @@ export default class Home extends Vue {
           padding: 8px 10px;
           background: rgba(255, 255, 255, 0.06);
           border: 1px solid rgba(212, 175, 55, 0.2);
-          border-radius: 6px;
+          border-radius: var(--radius-sm);
           color: #e0e0e0;
           font-size: 13px;
           box-sizing: border-box;
           font-family: inherit;
+          transition: var(--transition-fast);
           &:focus { outline: none; border-color: rgba(212, 175, 55, 0.6); }
           &:disabled { opacity: 0.5; }
         }
         textarea { resize: vertical; min-height: 50px; }
-        select option { background: #1a1a2e; color: #e0e0e0; }
+        select option { background: #0d2e1e; color: #e0e0e0; }
         .model-input-row {
           display: flex;
           gap: 8px;
@@ -688,7 +853,7 @@ export default class Home extends Vue {
             padding: 8px 10px;
             background: rgba(255, 255, 255, 0.06);
             border: 1px solid rgba(212, 175, 55, 0.2);
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             color: #e0e0e0;
             font-size: 13px;
           }
@@ -697,10 +862,11 @@ export default class Home extends Vue {
             padding: 0;
             background: rgba(255,255,255,0.08);
             border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             color: #d4af37;
             font-size: 16px;
             cursor: pointer;
+            transition: var(--transition-fast);
             &:hover:not(:disabled) { background: rgba(255,255,255,0.12); }
           }
           .btn-danger {
@@ -736,7 +902,7 @@ export default class Home extends Vue {
           flex: 1;
           padding: 10px 0;
           border: none;
-          border-radius: 6px;
+          border-radius: var(--radius-sm);
           font-size: 14px;
           font-weight: 600;
           cursor: pointer;
@@ -758,30 +924,89 @@ export default class Home extends Vue {
   }
 
   .back-to-home {
-    background-color: #33cccc;
-    border: solid #33cccc;
-    border-radius: 0 0.5rem 0.5rem 0;
+    background: var(--accent-gold-dim);
+    border: 1px solid var(--border-medium);
+    color: var(--accent-gold);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     display: inline;
     left: 0;
     position: absolute;
     top: 0;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    z-index: 1;
+
+    &:hover {
+      background: var(--accent-gold);
+      color: #0a0a0a;
+    }
   }
 
   .room-btn {
     max-width: 600px;
     margin: auto;
+    position: relative;
+    z-index: 1;
 
-    span {
-      font-size: 20px;
-      font-weight: bold;
+    .welcome-message {
+      color: var(--accent-gold);
+      font-size: 16px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 24px;
+      letter-spacing: 0.5px;
     }
 
     .btn {
-      margin: 30px auto;
+      margin: 16px auto;
+      max-width: 320px;
+
+      span {
+        display: block;
+        text-align: center;
+        padding: 14px 28px;
+        background: linear-gradient(135deg, var(--accent-gold), #c49b2a);
+        color: #0a0a0a;
+        font-weight: 700;
+        font-size: 16px;
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-gold);
+        transition: var(--transition-normal);
+        letter-spacing: 0.5px;
+        cursor: pointer;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-gold-lg);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
     }
 
     .btn-logout {
-      span { color: #e8050a; }
+      span {
+        background: transparent;
+        border: 1px solid var(--accent-red);
+        color: var(--accent-red);
+        box-shadow: none;
+        font-weight: 600;
+
+        &:hover {
+          background: rgba(231, 76, 60, 0.1);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(231, 76, 60, 0.15);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
     }
   }
 
@@ -789,16 +1014,43 @@ export default class Home extends Vue {
     line-height: 40px;
     text-align: center;
     width: 100%;
-    .error {
-      border: 1px solid #e8050a;
+    position: relative;
+    z-index: 1;
+
+    p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin: 16px 0 8px;
     }
+
+    .error {
+      border: 1px solid var(--accent-red) !important;
+      box-shadow: 0 0 8px rgba(231, 76, 60, 0.2);
+    }
+
     .input-bd {
-      border: 1px solid #bababa;
-      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.03);
+      transition: var(--transition-fast);
+
+      &:focus-within {
+        border-color: var(--accent-gold);
+        box-shadow: var(--shadow-gold);
+      }
+
       input {
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: var(--text-primary);
+        padding: 8px 12px;
+
+        &::placeholder {
+          color: var(--text-muted);
+        }
       }
     }
+
     .room-btn {
       height: 30px;
       margin-top: 0;
@@ -809,10 +1061,18 @@ export default class Home extends Vue {
         height: 30px;
         font-size: 12px;
         color: #fff;
-        background-color: #00976e;
-        border-radius: 8px;
+        background: linear-gradient(135deg, var(--accent-green), #1e8a4e);
+        border-radius: var(--radius-sm);
         padding: 0 20px;
         display: block;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition-fast);
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(39, 174, 96, 0.25);
+        }
       }
     }
 
@@ -824,37 +1084,70 @@ export default class Home extends Vue {
 
   table.hot-rooms {
     width: 100%;
-    border: 1px solid black;
     border-collapse: collapse;
     table-layout: fixed;
+    border: none;
+    margin-top: 8px;
 
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-    th {
-      border: 1px solid black;
-      background-color: #4caf50;
-      color: white;
-    }
-    th.hot-room-number {
-      width: 20%;
-    }
+    thead {
+      tr {
+        background: var(--accent-gold-dim);
+        border-bottom: 1px solid var(--border-medium);
+      }
 
-    td {
-      border: 1px solid black;
-      word-wrap: break-word;
-    }
-    td.hot-room-number {
-      text-decoration: underline;
-      color: #0d6efd;
-    }
+      th {
+        color: var(--accent-gold);
+        font-weight: 600;
+        font-size: 13px;
+        padding: 10px 12px;
+        text-align: left;
+        border: none;
+        letter-spacing: 0.5px;
+      }
 
-    td.hot-room-number:hover {
-      color: #0a58ca;
+      th.hot-room-number {
+        width: 25%;
+      }
     }
 
-    td.hot-room-player {
-      word-wrap: break-word;
+    tbody {
+      tr {
+        border-bottom: 1px solid var(--border-subtle);
+        transition: var(--transition-fast);
+
+        &:nth-child(even) {
+          background: rgba(255, 255, 255, 0.02);
+        }
+
+        &:hover {
+          background: rgba(212, 175, 55, 0.06);
+        }
+      }
+
+      td {
+        padding: 10px 12px;
+        color: var(--text-secondary);
+        font-size: 13px;
+        border: none;
+        word-wrap: break-word;
+
+        &.hot-room-number {
+          color: var(--accent-gold);
+          text-decoration: none;
+          font-weight: 600;
+          cursor: pointer;
+          transition: var(--transition-fast);
+
+          &:hover {
+            color: var(--accent-gold-light);
+            text-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+          }
+        }
+
+        &.hot-room-player {
+          word-wrap: break-word;
+        }
+      }
     }
   }
 }

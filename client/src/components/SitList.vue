@@ -329,7 +329,7 @@ export default class SitList extends Vue {
     top: 50%;
     height: 180px;
     margin-top: -90px;
-    background-image: linear-gradient(90deg, transparent 5%, rgba(255, 255, 255, 0.2) 75%, transparent);
+    background-image: linear-gradient(90deg, transparent 0%, rgba(212, 175, 55, 0.25) 60%, transparent);
     clip-path: polygon(0 50%, 100% 0, 100% 100%, 0 50%);
     transform-origin: left center;
     pointer-events: none;
@@ -350,6 +350,21 @@ export default class SitList extends Vue {
     margin: auto;
     box-sizing: border-box;
 
+    .sit-number {
+      position: absolute;
+      top: -14px;
+      left: 0;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 1px 5px;
+      border-radius: 3px;
+      white-space: nowrap;
+      letter-spacing: 0.3px;
+      z-index: 2;
+    }
+
     .sit {
       position: absolute;
       font-size: 12px;
@@ -362,29 +377,45 @@ export default class SitList extends Vue {
 
       .default {
         i {
-          width: 48px;
-          height: 48px;
+          width: 52px;
+          height: 52px;
           border-radius: 50%;
-          border: 1px solid #bababa;
+          border: 1px dashed var(--border-medium);
           display: block;
           font-style: normal;
           font-size: 20px;
-          line-height: 48px;
-          color: #fff;
+          line-height: 52px;
+          color: var(--text-muted);
+          background: var(--bg-glass);
+          backdrop-filter: blur(4px);
+          transition: all var(--transition-fast);
+
+          &:hover {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+          }
         }
       }
 
       .player {
-        width: 48px;
+        width: 52px;
         position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
 
         .icon {
-          width: 48px;
-          height: 48px;
+          width: 52px;
+          height: 52px;
           font-size: 45px;
-          line-height: 48px;
+          line-height: 52px;
           border-radius: 50%;
-          margin-bottom: 2px;
+          margin-bottom: 4px;
+          background: linear-gradient(135deg, #1a2a3a, #2a3a4a);
+          border: 2px solid var(--border-subtle);
+          box-shadow: var(--shadow-sm);
+          color: var(--accent-gold);
+          order: -1; /* Move avatar above user-name */
         }
 
         .speaking-icon {
@@ -395,11 +426,17 @@ export default class SitList extends Vue {
         }
 
         .user-name {
-          color: #fff;
+          color: var(--text-primary);
+          font-weight: 600;
+          font-size: 12px;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
           text-shadow: 1px 1px 2px black;
+          text-align: center;
+          width: 100%;
+          line-height: 1.3;
+          margin-bottom: 2px;
         }
 
         .count-down {
@@ -411,18 +448,24 @@ export default class SitList extends Vue {
           left: 0;
           top: 18px;
           bottom: 18px;
-          color: #fff;
+          color: var(--accent-gold);
           font-weight: 700;
-          font-size: 20px;
-          background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.3), transparent);
+          font-size: 22px;
+          background: linear-gradient(0deg, rgba(0, 0, 0, 0.4), transparent);
+          z-index: 2;
         }
 
         .counter {
-          background-color: rgba(0, 0, 0, 0.6);
-          color: #fff;
+          background: var(--bg-glass);
+          backdrop-filter: blur(4px);
+          border-radius: var(--radius-sm);
+          padding: 2px 6px;
+          color: var(--text-primary);
+          border: 1px solid var(--border-subtle);
           font-weight: 600;
-          font-size: 12px;
-          border-radius: 2px;
+          font-size: 11px;
+          text-align: center;
+          white-space: nowrap;
 
           &.isAction {
             box-shadow: 0px 0px 6px 4px;
@@ -434,61 +477,73 @@ export default class SitList extends Vue {
         }
 
         .action-command {
-          top: 14px;
-          left: calc(100% - 3px);
-          padding: 1px 8px;
-          border-radius: 9px;
-          color: #ffffff;
-          background-color: #2c3e50;
+          top: 20px;
+          left: calc(100% + 2px);
+          padding: 2px 8px;
+          border-radius: var(--radius-sm);
+          color: var(--text-primary);
+          background: var(--bg-card);
+          border: 1px solid var(--border-subtle);
+          font-size: 11px;
+          font-weight: 600;
           text-shadow: 1px 2px 3px rgba(0, 0, 0, 0.3);
           position: absolute;
+          white-space: nowrap;
+          z-index: 3;
         }
 
         .card-style {
           color: #fff;
           margin-top: 4px;
+          font-size: 11px;
+          text-align: center;
         }
 
         .position-label {
           position: absolute;
-          left: 100%;
-          top: 66px;
+          left: calc(100% + 2px);
+          top: 78px;
+          border-radius: var(--radius-sm);
           font-size: 10px;
-          font-weight: bold;
-          border-radius: 3px;
-          padding: 1px 4px;
+          font-weight: 700;
+          padding: 2px 5px;
           line-height: 14px;
-          letter-spacing: 1px;
+          letter-spacing: 0.5px;
+          white-space: nowrap;
+          z-index: 3;
         }
 
         .position-label--d {
-          background: #fff;
-          color: #2b2b2b;
+          background: var(--accent-gold);
+          color: #0a0a0a;
         }
 
         .position-label--sb {
-          background: #3498db;
+          background: var(--accent-blue);
           color: #fff;
         }
 
         .position-label--bb {
-          background: #e67e22;
+          background: var(--accent-orange);
           color: #fff;
         }
 
         .action-size {
-          background: rgba(0, 0, 0, 0.3) url('../assets/icon/gold.svg') center left no-repeat;
-          background-size: contain;
-          border-radius: 2px;
-          padding: 1px 4px 1px 17px;
+          background: var(--accent-gold-dim);
+          border: 1px solid var(--accent-gold-border);
+          border-radius: var(--radius-sm);
+          padding: 2px 8px;
           text-align: center;
-          color: #fff;
-          font-weight: 600;
+          color: var(--accent-gold);
+          font-weight: 700;
+          font-size: 11px;
           position: absolute;
-          left: 100%;
-          top: 40px;
+          left: calc(100% + 2px);
+          top: 56px;
           min-width: 30px;
           box-sizing: border-box;
+          white-space: nowrap;
+          z-index: 3;
         }
 
         &.fold {
@@ -503,12 +558,14 @@ export default class SitList extends Vue {
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 999;
-        background: radial-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0) 70%);
+        z-index: 150;
+        background: radial-gradient(rgba(0, 0, 0, 0.5), transparent 70%);
+
         i {
-          color: #fff;
-          font-size: 50px;
+          color: var(--accent-gold);
+          font-size: 40px;
         }
+
         span {
           font-size: 25px;
           color: #fff;
@@ -530,19 +587,22 @@ export default class SitList extends Vue {
 
         .action-command {
           left: unset;
-          right: calc(100% - 3px);
+          right: calc(100% + 2px);
+          top: 20px;
         }
 
         .position-label {
           left: unset;
-          right: 100%;
+          right: calc(100% + 2px);
+          top: 78px;
         }
 
         .action-size {
-          top: 0;
-          left: calc(100% + 20px);
-          min-width: 84px;
-          padding-right: 17px;
+          top: 56px;
+          left: unset;
+          right: calc(100% + 2px);
+          min-width: 30px;
+          padding: 2px 8px;
           text-align: center;
         }
       }
@@ -599,20 +659,21 @@ export default class SitList extends Vue {
       &:nth-child(10) {
         .action-command {
           left: unset;
-          right: calc(100% - 3px);
+          right: calc(100% + 2px);
+          top: 20px;
         }
 
         .position-label {
           left: unset;
-          right: 100%;
+          right: calc(100% + 2px);
+          top: 78px;
         }
 
         .action-size {
-          background-position: right;
           left: unset;
-          right: 100%;
-          padding-left: 1px;
-          padding-right: 17px;
+          right: calc(100% + 2px);
+          top: 56px;
+          padding: 2px 8px;
           text-align: right;
         }
 
@@ -620,6 +681,7 @@ export default class SitList extends Vue {
           left: unset;
           right: 0;
         }
+
         .card-style {
           min-width: 100%;
           float: right;
@@ -653,9 +715,10 @@ export default class SitList extends Vue {
         z-index: 8;
         left: 0;
         top: 4vh;
-        font-size: 20px;
-        color: rgba(255, 209, 0, 0.99);
+        font-size: 22px;
+        color: var(--accent-gold);
         font-weight: 600;
+        text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
         animation: fadeOut 4s forwards;
         background-image: linear-gradient(to top, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0));
       }
@@ -676,6 +739,7 @@ export default class SitList extends Vue {
       opacity: 0;
     }
   }
+
   @-webkit-keyframes timeOut /* Safari 与 Chrome */ {
     0% {
       box-shadow: none;

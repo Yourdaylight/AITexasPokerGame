@@ -22,6 +22,12 @@
                 >⚙</span>
                 <span
                   class="ai-action-btn"
+                  @click="enablePokerSkill = !enablePokerSkill"
+                  :class="{ active: enablePokerSkill }"
+                  :title="enablePokerSkill ? 'PokerSkill ON (P1-P5)' : 'PokerSkill OFF (P1 only)'"
+                >{{ enablePokerSkill ? 'P5' : 'P1' }}</span>
+                <span
+                  class="ai-action-btn"
                   @click="requestAnalysis"
                   :class="{ spinning: loading }"
                   title="Analyze"
@@ -87,7 +93,7 @@
 <script lang="ts">
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import service from '@/service';
-import { AIContext, getAIContext, sanitizeUserPrompt } from '@/utils/aiContext';
+import { sanitizeUserPrompt } from '@/utils/aiContext';
 
 const marked = require('marked');
 const DOMPurify = require('dompurify');
@@ -128,64 +134,29 @@ export default class AIAdvisor extends Vue {
   }
 
   // Context
-  private ctx: AIContext | null = null;
-  private lastActionCount = 0;
   private prevHandCard: string[] = [];
+
+  // PokerSkill toggle
+  public enablePokerSkill = true;
 
   get hasApiKey() {
     return !!(this.activeConfig && this.activeConfig.api_key);
   }
 
-  @Watch('roomId')
-  public onRoomChange(roomId: string) {
-    if (roomId) {
-      this.ctx = getAIContext(roomId);
-    }
-  }
-
-  @Watch('players')
-  public onPlayersChange(players: any[]) {
-    if (!this.ctx) return;
-    for (const player of players) {
-      if (player.userId && player.gameCount > 0) {
-        this.ctx.updateOpponentProfile(player.userId, player);
-      }
-    }
-  }
-
-  @Watch('currentRoundActions')
-  public onActionsChange(actions: any[]) {
-    if (!this.ctx || actions.length === 0) return;
-    if (actions.length > this.lastActionCount) {
-      const newActions = actions.slice(this.lastActionCount);
-      for (const action of newActions) {
-        if (action.userId) {
-          this.ctx.logOpponentAction(action.userId, action.latestAction, this.commonCard.length);
-        }
-      }
-    }
-    this.lastActionCount = actions.length;
-  }
-
   @Watch('handCard')
   public onHandCardChange(newCards: string[]) {
-    if (this.ctx && this.prevHandCard.length > 0 && newCards.length > 0 &&
+    if (this.prevHandCard.length > 0 && newCards.length > 0 &&
         JSON.stringify(newCards) !== JSON.stringify(this.prevHandCard)) {
-      this.ctx.resetForNewRound();
       this.streamText = '';
       this.suggestion = '';
       this.handStrength = '';
       this.actionAdvice = '';
       this.generalAnalysis = '';
-      this.lastActionCount = 0;
     }
     this.prevHandCard = [...newCards];
   }
 
   public mounted() {
-    if (this.roomId) {
-      this.ctx = getAIContext(this.roomId);
-    }
     this.loadAIConfigs();
   }
 
@@ -222,39 +193,36 @@ export default class AIAdvisor extends Vue {
   public async requestAnalysis() {
     if (this.loading || this.handCard.length === 0 || !this.hasApiKey) return;
 
-    if (!this.ctx && this.roomId) {
-      this.ctx = getAIContext(this.roomId);
-    }
-
     this.loading = true;
     this.hasError = false;
     this.streamText = '';
 
     const cfg = this.activeConfig;
-    if (!cfg) {
-      this.loading = false;
-      return;
-    }
+    if (!cfg) { this.loading = false; return; }
 
     try {
-      if (this.ctx && this.ctx.needsCompression()) {
-        await this.ctx.compress(cfg.api_key, cfg.api_url, cfg.model);
-      }
+      // Determine stage from commonCard count
+      const cc = this.commonCard.length;
+      const stage = cc === 0 ? 'preflop' : cc === 3 ? 'flop' : cc === 4 ? 'turn' : 'river';
 
-      const messages = this.ctx
-        ? this.ctx.buildMessages(
-            this.handCard, this.commonCard, this.pot,
-            this.players, this.prevSize, this.smallBlind,
-            this.position, this.currentRoundActions,
-            sanitizeUserPrompt(cfg.agent_prompt || '')
-          )
-        : [];
+      // Count active players
+      const numActive = this.players.filter((p: any) => p.player && p.player.status === 1).length || 2;
 
       let fullText = '';
 
-      service.getAIAnalysis(
+      service.getAIAdvisor(
         {
-          messages,
+          // Game state for PokerSkill
+          handCard: this.handCard,
+          commonCard: this.commonCard,
+          pot: this.pot,
+          prevSize: this.prevSize,
+          smallBlind: this.smallBlind,
+          position: this.position,
+          stage,
+          numActivePlayers: Math.max(numActive, 2),
+          enablePokerSkill: this.enablePokerSkill,
+          // LLM config
           apiKey: cfg.api_key,
           apiUrl: cfg.api_url,
           model: cfg.model,
@@ -272,15 +240,6 @@ export default class AIAdvisor extends Vue {
         () => {
           this.loading = false;
           this.suggestion = fullText;
-          if (this.ctx) {
-            const situationText = this.ctx.buildSituationText(
-              this.handCard, this.commonCard, this.pot,
-              this.players, this.prevSize, this.smallBlind,
-              this.position, this.currentRoundActions
-            );
-            this.ctx.addMessage('user', situationText);
-            this.ctx.addMessage('assistant', fullText);
-          }
         }
       );
     } catch (e) {
@@ -333,17 +292,21 @@ export default class AIAdvisor extends Vue {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
     z-index: 200;
     display: flex;
     justify-content: flex-end;
   }
 
   .ai-drawer {
-    width: 50%;
+    width: 420px;
+    max-width: 85vw;
     height: 100%;
-    background: rgba(20, 20, 35, 0.5);
-    backdrop-filter: blur(4px);
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border-left: 1px solid var(--border-medium);
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.4);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -353,7 +316,7 @@ export default class AIAdvisor extends Vue {
       justify-content: space-between;
       align-items: center;
       padding: 12px 16px;
-      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+      border-bottom: 1px solid var(--border-subtle);
       flex-shrink: 0;
 
       .ai-title {
@@ -414,7 +377,7 @@ export default class AIAdvisor extends Vue {
           padding: 8px 10px;
           background: rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(212, 175, 55, 0.2);
-          border-radius: 4px;
+          border-radius: var(--radius-sm);
           color: #e0e0e0;
           font-size: 12px;
           box-sizing: border-box;
@@ -427,7 +390,7 @@ export default class AIAdvisor extends Vue {
         }
         select {
           cursor: pointer;
-          option { background: #1a1a2e; color: #e0e0e0; }
+          option { background: #0d2e1e; color: #e0e0e0; }
         }
 
       .ai-config-info {
@@ -484,9 +447,9 @@ export default class AIAdvisor extends Vue {
       padding: 12px 16px;
       overflow-y: auto;
       flex: 1;
-      font-size: 13px;
-      color: #ccc;
-      line-height: 1.6;
+      font-size: 14px;
+      color: var(--text-primary);
+      line-height: 1.7;
 
       .ai-nokey {
         text-align: center;

@@ -47,6 +47,173 @@ function stripSystemMessages(messages: any[]): any[] {
   return messages.filter(m => m.role !== 'system');
 }
 
+// ==========================================
+// PokerSkill Prompt Builder for AI Advisor
+// ==========================================
+
+const CardNumberMap: Record<string, string> = {
+  a: '2', b: '3', c: '4', d: '5', e: '6', f: '7', g: '8', h: '9',
+  i: 'T', j: 'J', k: 'Q', l: 'K', m: 'A',
+};
+const CardSuitMap: Record<string, string> = {
+  '1': 'd', '2': 'c', '3': 'h', '4': 's',
+};
+
+function fmtCard(code: string): string {
+  if (!code || code.length !== 2) return code;
+  return (CardNumberMap[code[0]] || code[0]) + (CardSuitMap[code[1]] || code[1]);
+}
+
+function classifyTier(hand: string[]): string {
+  const ranks = hand.map(c => CardNumberMap[c[0]] || c[0]);
+  const suits = hand.map(c => c[1]);
+  const isPair = ranks[0] === ranks[1];
+  const isSuited = suits[0] === suits[1];
+  const rankOrder = '23456789TJQKA';
+  const ri = ranks.map(r => rankOrder.indexOf(r));
+  const [highIdx, lowIdx] = [Math.max(...ri), Math.min(...ri)];
+  const gap = highIdx - lowIdx;
+
+  if (isPair) {
+    if (highIdx >= rankOrder.indexOf('J')) return 'premium_pair';
+    if (highIdx >= rankOrder.indexOf('7')) return 'medium_pair';
+    return 'low_pair';
+  }
+  if (highIdx >= rankOrder.indexOf('T')) {
+    if (lowIdx >= rankOrder.indexOf('T') || (lowIdx >= rankOrder.indexOf('9') && isSuited)) return 'premium_broadway';
+    if (lowIdx >= rankOrder.indexOf('9')) return 'strong_broadway';
+    if (isSuited && gap <= 2) return 'suited_connector';
+    return 'marginal_high';
+  }
+  if (isSuited && gap <= 2 && highIdx >= rankOrder.indexOf('6')) return 'suited_connector';
+  if (isPair || (isSuited && highIdx >= rankOrder.indexOf('9'))) return 'playable';
+  return 'weak';
+}
+
+function buildPokerSkillPrompt(
+  handCard: string[], commonCard: string[], pot: number,
+  prevSize: number, smallBlind: number, myPosition: string,
+  stage: string, numActivePlayers: number, enableSkills: boolean
+): string {
+  const hand = handCard.map(fmtCard).join(' ');
+  const board = commonCard.map(fmtCard).join(' ');
+  const stageNames: Record<string, string> = {
+    preflop: '翻前', flop: '翻牌', turn: '转牌', river: '河牌',
+  };
+  const posLabel: Record<string, string> = {
+    d: '庄位(Button)', sb: '小盲(SB)', bb: '大盲(BB)',
+  };
+
+  // P1: Always - Game rules
+  let prompt = `你是一位世界级的无限注德州扑克玩家。你必须在当前牌局中做出最优决策。
+
+**游戏规则：**
+- 这是无限注德州扑克（No-Limit Texas Hold'em）
+- 你可以执行以下操作：fold（弃牌）、check（过牌）、call（跟注）、raise:XXX（加注到XXX）、allin（全下）
+- 加注必须至少是前一个加注额的两倍，或至少是大盲注的两倍
+- check 只有在当前无需跟注时才能使用
+
+**输出格式（严格按照此格式，不要输出任何其他内容）：**
+{ "action": "<action_type>", "reasoning": "<简短的中文理由>" }
+
+action_type 必须是以下之一：fold, check, call, raise:XXX, allin`;
+
+  if (enableSkills) {
+    // P2: Preflop guidance
+    if (stage === 'preflop') {
+      const tier = classifyTier(handCard);
+      const pos = posLabel[myPosition] || '中间位置';
+      prompt += `\n\n---\n\n**翻前范围指导 (P2):**
+- 手牌: ${hand}
+- 手牌等级: ${tier}
+- 位置: ${pos}
+- 在局人数: ${numActivePlayers}人`;
+
+      if (tier === 'premium_pair' || tier === 'premium_broadway') {
+        prompt += `\n- **策略**: 强牌，应该加注。建议加注到 ${smallBlind * 3}~${smallBlind * 5}。`;
+      } else if (tier === 'medium_pair' || tier === 'strong_broadway') {
+        prompt += `\n- **策略**: 后位强牌，可以加注。面对加注可以跟注。`;
+      } else if (tier === 'low_pair' || tier === 'suited_connector') {
+        prompt += `\n- **策略**: 投机牌。在后位且底池未被加注时可以跟注看翻牌。面对大加注建议弃牌。`;
+      } else if (tier === 'marginal_high' || tier === 'playable') {
+        prompt += `\n- **策略**: 边缘牌。后位且无人加注时可考虑跟注，前位或面对加注建议弃牌。`;
+      } else {
+        prompt += `\n- **策略**: 弱牌。大多数情况下应该弃牌，除非在大盲位且无人加注。`;
+      }
+      if (myPosition === 'bb' && prevSize === 0) {
+        prompt += `\n- **大盲位特权**: 无人加注时可以免费看翻牌(check)。`;
+      }
+    }
+
+    // P3: Postflop principles
+    if (stage !== 'preflop') {
+      prompt += `\n\n---\n\n**翻后通用原则与牌力评估 (P3):**
+- 手牌: ${hand}
+- 公共牌: ${board || '无'}
+- 阶段: ${stageNames[stage] || stage}
+- 底池: ${pot}`;
+
+      // Simple hand strength assessment
+      const allCards = [...handCard.map(fmtCard), ...commonCard.map(fmtCard)];
+      const allRanks = allCards.map(c => c[0]);
+      const rankCounts: Record<string, number> = {};
+      allRanks.forEach(r => { rankCounts[r] = (rankCounts[r] || 0) + 1; });
+      const hasTrips = Object.values(rankCounts).some(c => c >= 3);
+      const hasPair = Object.values(rankCounts).some(c => c >= 2);
+
+      if (hasTrips) {
+        prompt += `\n- **牌力**: 强 (三条/葫芦可能)\n- **策略**: 强牌，持续下注获取价值。`;
+      } else if (hasPair) {
+        prompt += `\n- **牌力**: 中等 (一对)\n- **策略**: 根据对子强度和牌面决定。`;
+      } else {
+        prompt += `\n- **牌力**: 弱 (高牌)\n- **策略**: 没有成牌。可以考虑诈唬或过牌弃牌。`;
+      }
+      if (prevSize > 0) {
+        prompt += `\n- **底池赔率**: 需跟注 ${prevSize} 赢 ${pot + prevSize}`;
+      }
+    }
+
+    // P4: Targeted strategy (postflop only)
+    if (stage !== 'preflop') {
+      prompt += `\n\n---\n\n**针对性策略 (P4):**
+- 在局人数: ${numActivePlayers}
+- 局面: ${numActivePlayers <= 2 ? '单挑' : '多人底池'}`;
+      if (numActivePlayers <= 2) {
+        prompt += `\n- **进攻模式**: 单挑局建议高频率持续下注(~70%)，下注大小: 半池到3/4池`;
+      } else {
+        prompt += `\n- **多人局**: 用强牌下注，中等牌过牌控池，弱牌弃牌。`;
+      }
+    }
+
+    // P5: River guidance
+    if (stage === 'river') {
+      prompt += `\n\n---\n\n**河牌诈唬与抓诈指导 (P5):**
+- 公共牌: ${board}
+\n**诈唬条件检查:**
+- 你的手牌是否有摊牌价值? 没有则可以考虑诈唬
+- 牌面是否有完成的听牌? 可以代表这些牌诈唬
+- 对手的范围是否受限? 受限范围更容易被诈唬
+\n**抓诈条件检查:**
+- 你是否有中等强度的成牌? 可以考虑抓诈
+- 对手的故事是否连贯? 不连贯的下注可能是诈唬
+- 底池赔率是否合适? 抓诈需要好的赔率`;
+    }
+  }
+
+  // Situation (always included)
+  prompt += `\n\n---\n\n**当前局面:**
+- 你的手牌: ${hand}
+- 公共牌: ${board || '无'}
+- 阶段: ${stageNames[stage] || stage}
+- 底池: ${pot}
+- 当前需要跟注: ${prevSize}
+- 盲注: ${smallBlind}/${smallBlind * 2}
+- 位置: ${posLabel[myPosition] || '中间位置'}
+- 在局活跃玩家: ${numActivePlayers}人`;
+
+  return prompt;
+}
+
 @Provide()
 @Controller('/node/ai')
 export class AIController extends BaseController {
@@ -260,6 +427,160 @@ export class AIController extends BaseController {
     } catch (e: any) {
       this.ctx.logger.error('AI compress error:', e);
       this.success({ summary: '' });
+    }
+  }
+
+  /**
+   * POST /node/ai/advisor
+   * PokerSkill-powered AI advisor with 5-layer strategy architecture
+   * Receives game state and returns streaming analysis
+   */
+  @Post('/advisor')
+  async advisor() {
+    try {
+      const { body } = this.getRequestBody();
+      const {
+        handCard, commonCard, pot, prevSize, smallBlind,
+        position, stage, numActivePlayers,
+        apiKey, apiUrl, model, agentPrompt, enablePokerSkill,
+      } = body;
+
+      const finalApiKey = apiKey || this.aiConfig?.apiKey || '';
+      const finalApiUrl = apiUrl || this.aiConfig?.apiUrl || '';
+      const finalModel = model || this.aiConfig?.model || 'MiniMax-M2.7';
+
+      if (!finalApiKey || !finalApiUrl) {
+        this.ctx.set('Content-Type', 'text/event-stream');
+        this.ctx.res.write(`data: ${JSON.stringify({ error: 'AI未配置，请在设置中填写API Key' })}\n\n`);
+        this.ctx.res.write('event: close\ndata: {}\n\n');
+        this.ctx.res.end();
+        return;
+      }
+
+      // Build PokerSkill prompt
+      const skillPrompt = buildPokerSkillPrompt(
+        handCard || [], commonCard || [], pot || 0,
+        prevSize || 0, smallBlind || 5, position || '',
+        stage || 'preflop', numActivePlayers || 2,
+        enablePokerSkill !== false, // Default: enabled
+      );
+
+      // Build messages
+      const messages: any[] = [];
+      messages.push({ role: 'system', content: skillPrompt });
+
+      // Add agent style if provided
+      if (agentPrompt) {
+        const sanitized = sanitizeAgentPrompt(agentPrompt);
+        if (sanitized) {
+          messages.push({
+            role: 'system',
+            content: `[USER_AGENT_STYLE_START]${sanitized}[USER_AGENT_STYLE_END]`,
+          });
+        }
+      }
+
+      // SSE headers
+      this.ctx.status = 200;
+      this.ctx.set('Content-Type', 'text/event-stream');
+      this.ctx.set('Cache-Control', 'no-cache');
+      this.ctx.set('Connection', 'keep-alive');
+
+      await new Promise<void>((resolve) => {
+        const res = this.ctx.res;
+
+        urllib.request(finalApiUrl, {
+          method: 'POST',
+          contentType: 'json',
+          dataType: 'json',
+          streaming: true,
+          data: {
+            model: finalModel,
+            messages,
+            temperature: 0.3,  // Lower temperature for PokerSkill (more deterministic)
+            max_tokens: 512,   // Shorter response for action recommendation
+            stream: true,
+          },
+          headers: {
+            'Authorization': `Bearer ${finalApiKey}`,
+            'Content-Type': 'application/json',
+            'Accept': 'text/event-stream',
+          },
+          timeout: 15000,
+        }).then(result => {
+          let resolved = false;
+          const done = () => { if (!resolved) { resolved = true; resolve(); } };
+          let sseBuffer = '';
+          let inThinking = false;
+
+          const flushSSE = () => {
+            const parts = sseBuffer.split('\n\n');
+            sseBuffer = parts.pop() || '';
+            for (const block of parts) {
+              for (const line of block.split('\n')) {
+                if (!line.startsWith('data:')) continue;
+                const dataStr = line.slice(5).trim();
+                if (dataStr === '[DONE]') {
+                  if (!res.writableEnded) {
+                    res.write('event: close\ndata: {}\n\n');
+                    res.end();
+                  }
+                  done();
+                  return;
+                }
+                try {
+                  const data = JSON.parse(dataStr);
+                  const delta: string = data.choices?.[0]?.delta?.content || '';
+                  if (!delta) continue;
+                  if (delta.includes('<think>')) { inThinking = true; }
+                  if (inThinking) {
+                    if (delta.includes('</think>')) { inThinking = false; }
+                    continue;
+                  }
+                  res.write(`data: ${JSON.stringify({ delta })}\n\n`);
+                } catch (e) { /* skip malformed */ }
+              }
+            }
+          };
+
+          result.res.on('data', (chunk: Buffer) => {
+            sseBuffer += chunk.toString();
+            flushSSE();
+          });
+
+          result.res.on('end', () => {
+            if (!res.writableEnded) {
+              res.write('event: close\ndata: {}\n\n');
+              res.end();
+            }
+            done();
+          });
+
+          result.res.on('error', (err: any) => {
+            if (!res.writableEnded) {
+              res.write(`data: ${JSON.stringify({ error: err.message || 'stream error' })}\n\n`);
+              res.write('event: close\ndata: {}\n\n');
+              res.end();
+            }
+            done();
+          });
+        }).catch((e: any) => {
+          this.ctx.logger.error('AI advisor upstream error:', e);
+          if (!res.writableEnded) {
+            res.write(`data: ${JSON.stringify({ error: 'AI分析失败: ' + (e.message || '上游请求失败') })}\n\n`);
+            res.write('event: close\ndata: {}\n\n');
+            res.end();
+          }
+          resolve();
+        });
+      });
+
+    } catch (e: any) {
+      this.ctx.logger.error('AI advisor error:', e);
+      this.ctx.set('Content-Type', 'text/event-stream');
+      this.ctx.res.write(`data: ${JSON.stringify({ error: 'AI分析失败: ' + (e.message || '未知错误') })}\n\n`);
+      this.ctx.res.write('event: close\ndata: {}\n\n');
+      this.ctx.res.end();
     }
   }
 

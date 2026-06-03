@@ -1,249 +1,300 @@
-# AI Texas Poker Game 🃏
+# AITexasPokerGame
 
-An online multiplayer Texas Hold'em game with **AI bot opponents powered by PokerSkill** — a 5-layer LLM-based strategy framework that enables frontier models to play expert-level poker without training or solvers.
+> AI-powered Texas Hold'em with **PokerSkill** - a 5-layer LLM strategy architecture for expert-level poker decisions without training or solvers.
 
-> Based on research: *"PokerSkill: LLMs Can Play Expert-Level Poker without Training or Solvers"* (Li, Wang, Huang — Tsinghua University, 2026)
+## Overview
 
----
+AITexasPokerGame is a real-time multiplayer Texas Hold'em poker game featuring AI opponents and an AI advisor powered by **PokerSkill** - a 5-layer progressive prompt architecture that enables Large Language Models (LLMs) to play expert-level poker without any training data or game-theoretic solvers.
 
-## Features
+### Key Features
 
-- 🎮 **Multiplayer Texas Hold'em** — Real-time gameplay via WebSocket (Socket.IO)
-- 🤖 **AI Bot Players** — PokerSkill-powered bots that reason with structured 5-layer prompts
-- 🔬 **A/B Comparison Toggle** — Enable/disable PokerSkill layers to compare against baseline prompts
-- 🎨 **Vue 3 Frontend** — Card animations, action UI, VPIP/PFR stats display
-- 🗄️ **SQLite Storage** — Lightweight local database, no external DB required for development
-- 🐳 **Docker Deploy** — Production-ready with Nginx + Redis + multi-process support
-- 🔐 **JWT Authentication** — Token-based auth with room-level access control
+- **Real-time multiplayer** via WebSocket (Socket.IO)
+- **AI Opponents** with configurable count, skill level, and LLM backend
+- **PokerSkill 5-Layer Architecture** (P1-P5) for expert-level AI decisions
+- **A/B Toggle** between baseline mode (P1 only) and full strategy mode (P1-P5)
+- **AI Advisor** - real-time in-game strategy assistant with PokerSkill integration
+- **Classic Green Felt** poker table design
+- **Modern dark UI** with gold accents
 
-## Architecture
+## Screenshots
+
+### 1. Login Screen
+
+![Login Screen](docs/screenshot-login.png)
+
+Dark green gradient background with glassmorphism login card, gold accent buttons.
+
+**Online Demo**: https://whssjdh6anihg.ok.kimi.link
+
+### 2. Home Screen
+
+![Home Screen](https://github.com/user-attachments/assets/home-screen)
+
+Room creation, hot rooms list, quick access to game history and AI config.
+
+### 3. Room Config with Bot/PokerSkill
+
+![Room Config](https://github.com/user-attachments/assets/room-config)
+
+**NEW**: AI Bot configuration panel with:
+- Enable/disable AI opponents
+- AI count (1-8)
+- **PokerSkill toggle** (P5 ON/OFF)
+- AI starting chips
+- LLM API URL, Key, and Model selection
+
+### 4. Game Table - Classic Green Felt
+
+![Game Table](docs/screenshot-game-table-v2.png)
+
+Classic poker green felt table with:
+- 4-layer radial gradient simulating overhead lighting
+- **Seat numbers** (NO.1, NO.2, NO.3...) displayed for each position
+- Player seats with position labels (D/SB/BB)
+- Community cards and hole cards
+- Modern action buttons (Fold/Check/Raise)
+- Real-time pot display
+
+### 5. AI Advisor with PokerSkill
+
+![AI Advisor](https://github.com/user-attachments/assets/ai-advisor)
+
+**NEW**: AI Advisor powered by PokerSkill 5-layer architecture:
+- **P5/P1 toggle**: Switch between full strategy and baseline mode
+- **P2 - Preflop Range**: Hand tier classification (premium_pair, broadway, etc.) + position strategy
+- **P3 - Hand Strength**: Board analysis, pair/trips detection, pot odds
+- **P4 - Targeted Strategy**: Aggressive/defensive mode, bet sizing
+- **Recommended Action**: raise:300 with reasoning
+
+### 6. PokerSkill 5-Layer Architecture
+
+![Architecture](https://github.com/user-attachments/assets/architecture)
 
 ```
-┌─────────────┐     WebSocket      ┌─────────────────────────┐
-│  Vue Client  │ ◄──────────────► │   Midway.js Server       │
-│  (Vue 3 +    │   Socket.IO       │   (Egg.js + TypeScript)  │
-│   TypeScript)│                   │                         │
-└─────────────┘                   │  ┌───────────────────┐  │
-                                  │  │   PokerGame Core   │  │
-                                  │  │  (Rules / Actions) │  │
-                                  │  └────────┬──────────┘  │
-                                  │           │              │
-                                  │  ┌────────▼──────────┐  │
-                                  │  │   BotManager       │  │
-                                  │  │  (Bot Lifecycle)   │  │
-                                  │  └────────┬──────────┘  │
-                                  │           │              │
-                                  │  ┌────────▼──────────┐  │
-                                  │  │   PokerSkillBot    │  │
-                                  │  │  (5-Layer Prompt)  │  │
-                                  │  └────────┬──────────┘  │
-                                  │           │              │
-                                  └───────────┼──────────────┘
-                                              │
-                                     ┌────────▼──────────┐
-                                     │   LLM API          │
-                                     │  (GPT / Claude)    │
-                                     └───────────────────┘
+P1 - Game Rules (Always Active)
+  Rules, legal actions, JSON output format
+
+P2 - Preflop GTO Range (Preflop only)
+  Hand tier classification, position awareness, GTO guidance
+
+P3 - Postflop Principles (Flop/Turn)
+  Hand strength evaluation, pot odds, draw detection
+
+P4 - Targeted Strategy (Flop/Turn)
+  ATT/DEF mode, heads-up vs multi-pot, C-bet sizing
+
+P5 - River Bluff/Catch (River only)
+  Bluff conditions, bluff-catch checklist, range analysis
+
+A/B Toggle: enablePokerSkill
+  false = P1 only (baseline)     |     true = P1-P5 (full strategy)
+  482 chars                      |     900 chars (1.9x info delta)
 ```
 
-### PokerSkill 5-Layer Architecture
+## PokerSkill Integration
 
-| Layer | Scope | Content |
-|-------|-------|---------|
-| **P1** | Always | Game rules, execution framework, output format |
-| **P2** | Preflop | GTO range guidance based on hand tier + position |
-| **P3** | Postflop | Hand strength evaluation (pair detection, draws, pot odds) |
-| **P4** | Postflop | Targeted strategy (ATT/DEF budget, viable options, c-bet sizing) |
-| **P5** | River | Bluff/bluff-catch guidelines |
+### What is PokerSkill?
 
-When `enablePokerSkill` is **off**, bots use a simple default prompt — enabling direct A/B comparison.
+PokerSkill is a 5-layer progressive prompt architecture that injects professional poker strategy knowledge into LLM prompts at different game stages. It was inspired by the research on leveraging LLMs for expert-level poker play.
+
+### How It Works
+
+1. **P1 (Always)**: Establishes game rules, legal actions, and JSON output format constraints
+2. **P2 (Preflop)**: Provides GTO range guidance based on hand tier (premium_pair, medium_pair, suited_connector, etc.) and position (Dealer/SB/BB)
+3. **P3 (Flop/Turn)**: Evaluates hand strength against the board, calculates pot odds, detects draws
+4. **P4 (Flop/Turn)**: Determines aggressive/defensive mode, recommends bet sizing based on player count
+5. **P5 (River)**: Provides bluff and bluff-catch decision frameworks with checklist conditions
+
+### A/B Testing
+
+Toggle `enablePokerSkill` to compare:
+
+| Mode | Prompt Size | Strategy Coverage |
+|------|------------|-------------------|
+| Baseline (P1) | ~482 chars | Game rules only |
+| PokerSkill (P1-P5) | ~900 chars | Full GTO range + hand eval + targeting + bluffing |
+
+### Integration Points
+
+- **Backend**: `PokerSkillBot.ts` builds 5-layer prompts, `BotManager.ts` manages AI lifecycle
+- **Frontend**: `AIAdvisor.vue` displays PokerSkill analysis with P5/P1 toggle
+- **API**: `POST /node/ai/advisor` - PokerSkill-powered advisor endpoint
+- **Room Config**: Enable bots and PokerSkill when creating a room
+
+## Tech Stack
+
+### Backend
+
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| Midway.js | 3.x | TypeScript framework |
+| Egg.js | 2.x | Web server |
+| Socket.IO | 4.x | Real-time game communication |
+| SQLite/MySQL | - | Game data storage |
+| Redis | - | Session sticky |
+
+### Frontend
+
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| Vue 2 | 2.x | UI framework |
+| TypeScript | 4.x | Type safety |
+| Socket.IO Client | 4.x | Real-time communication |
+| Less | - | CSS preprocessor |
+
+## Project Structure
+
+```
+AITexasPokerGame/
+├── client/                     # Frontend (Vue 2)
+│   ├── src/
+│   │   ├── views/
+│   │   │   ├── login.vue       # Login page
+│   │   │   ├── home.vue        # Home with Bot config
+│   │   │   ├── game.vue        # Game table (green felt)
+│   │   │   └── register.vue
+│   │   ├── components/
+│   │   │   ├── Action.vue      # Action buttons (fold/check/raise)
+│   │   │   ├── SitList.vue     # Player seats
+│   │   │   ├── CardList.vue    # Poker cards
+│   │   │   ├── AIAdvisor.vue   # AI Advisor with PokerSkill toggle
+│   │   │   ├── CommonCard.vue  # Community cards
+│   │   │   └── BuyIn.vue       # Buy-in dialog
+│   │   ├── service/
+│   │   │   └── index.ts        # API calls (getAIAdvisor)
+│   │   └── utils/
+│   │       └── aiContext.ts    # AI context management
+│   └── package.json
+└── server/                     # Backend (Midway.js)
+    ├── src/
+    │   ├── app/
+    │   │   ├── controller/
+    │   │   │   ├── ai.ts       # AI endpoints (/advisor, /analyze)
+    │   │   │   ├── game.ts     # HTTP game controller
+    │   │   │   ├── room.ts     # Room management
+    │   │   │   └── user.ts     # User authentication
+    │   │   ├── io/controller/
+    │   │   │   └── game.ts     # WebSocket game controller
+    │   │   ├── core/
+    │   │   │   ├── PokerSkillBot.ts   # 5-layer strategy engine
+    │   │   │   ├── BotManager.ts      # Bot lifecycle + A/B toggle
+    │   │   │   └── pokerGame.ts       # Game logic
+    │   │   ├── entity/         # Database entities
+    │   │   └── service/        # Business services
+    │   └── test/
+    │       ├── pokerskill_integration_test.py  # Integration tests
+    │       └── pokerskill.test.js              # Unit tests
+    └── package.json
+```
+
+## API Endpoints
+
+### AI Advisor
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/node/ai/advisor` | PokerSkill-powered analysis (NEW) |
+| `POST` | `/node/ai/analyze` | General AI chat analysis |
+| `POST` | `/node/ai/compress` | Context compression |
+| `GET`  | `/node/ai/config` | Get AI configs |
+| `POST` | `/node/ai/config` | Create AI config |
+
+### Game
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/node/game/room` | Create room (with Bot config) |
+| `GET`  | `/node/game/roomList` | List rooms |
+| `POST` | `/node/user/login` | User login |
+| `POST` | `/node/user/register` | User registration |
+
+### WebSocket Events
+
+| Event | Direction | Description |
+|-------|-----------|-------------|
+| `gameAction` | Client -> Server | Player action (fold/check/call/raise) |
+| `gameOnline` | Client -> Server | Join room |
+| `lookPoker` | Client -> Server | Request show hand |
+| `autoAction` | Server -> Client | AI bot action trigger |
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js >= 18
-- Yarn or npm
-- Redis (for Socket.IO sticky sessions)
-- SQLite (included via `sqlite3` npm package)
+- Node.js >= 14
+- Redis (optional, for session sticky)
+- MySQL or SQLite (for production/development)
 
-### Local Development
+### Backend
 
 ```bash
-# 1. Clone
-git clone https://github.com/Yourdaylight/AITexasPokerGame.git
-cd AITexasPokerGame
-
-# 2. Install server dependencies
 cd server
-yarn install
+npm install
+npm run dev        # Development mode on port 5000
+```
 
-# 3. Start server (dev mode, port 5002)
-yarn dev
+### Frontend
 
-# 4. In another terminal, start client
+```bash
 cd client
-yarn install
-yarn dev
+npm install
+npm run serve      # Development server on port 8080
 ```
 
-The client dev server runs on `http://localhost:8080` by default.
+### Configure AI (Required for PokerSkill)
 
-### Quick Start (One Command)
-
-```bash
-bash start.sh
-```
-
-This starts both server and client using nvm to set Node.js 18.
-
-### Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `LLM_API_URL` | For AI bots | LLM API endpoint (e.g. `https://api.openai.com/v1/chat/completions`) |
-| `LLM_API_KEY` | For AI bots | LLM API key |
-| `LLM_MODEL` | For AI bots | Model name (default: `gpt-4o`) |
-| `POKER_DB_PATH` | Optional | SQLite database path (default: `./poker.db`) |
-| `PORT` | Optional | Server port (default: `7001`) |
-
-### Docker Deploy
-
-```bash
-# Build and start all services
-docker-compose -f docker/docker-compose.prod.yml build --no-cache
-docker-compose -f docker/docker-compose.prod.yml up -d
-
-# Build specific service
-docker-compose -f docker/docker-compose.prod.yml build api --no-cache
-```
-
-## Enabling AI Bots
-
-AI bots are controlled via the room configuration when joining a room. Pass these fields in `roomConfig`:
-
-```json
-{
-  "enableBots": true,
-  "botCount": 2,
-  "enablePokerSkill": true,
-  "botChips": 1000,
-  "llmApiUrl": "https://api.openai.com/v1/chat/completions",
-  "llmApiKey": "sk-...",
-  "llmModel": "gpt-4o"
-}
-```
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `enableBots` | boolean | `false` | Enable AI bot opponents |
-| `botCount` | number | `1` | Number of bots to add |
-| `enablePokerSkill` | boolean | `true` | Use 5-layer PokerSkill (false = baseline) |
-| `botChips` | number | `1000` | Starting chips per bot |
-| `llmApiUrl` | string | env | LLM API URL |
-| `llmApiKey` | string | env | LLM API key |
-| `llmModel` | string | `gpt-4o` | LLM model name |
-
-### Toggle for A/B Comparison
-
-Set `enablePokerSkill: false` to run the baseline mode (simple prompt, no skill layers). Compare bot win rates between the two modes to evaluate PokerSkill's effectiveness.
-
-At runtime, you can toggle via:
-```typescript
-botManager.setPokerSkillEnabled(false); // disable skill layers
-botManager.setPokerSkillEnabled(true);  // re-enable
-```
-
-## Project Structure
-
-```
-TexasPokerGame2/
-├── client/                    # Vue 3 frontend
-│   └── src/
-│       ├── components/        # Vue components (Player, SitList, GameRecord...)
-│       ├── utils/
-│       │   ├── aiContext.ts   # Client-side AI advisor context management
-│       │   └── PokerStyle.ts  # Hand strength evaluation
-│       └── views/             # Page views (game, home, login...)
-├── server/                    # Midway.js / Egg.js backend
-│   └── src/
-│       ├── app/
-│       │   ├── core/
-│       │   │   ├── PokerGame.ts      # Core game engine
-│       │   │   ├── Player.ts         # Player state & actions
-│       │   │   ├── Poker.ts          # Card deck & encoding
-│       │   │   ├── PokerSkillBot.ts  # 🆕 5-layer AI strategy engine
-│       │   │   └── BotManager.ts     # 🆕 Bot lifecycle management
-│       │   ├── io/controller/
-│       │   │   └── game.ts           # Game WebSocket controller
-│       │   └── middleware/           # Auth, join, log middleware
-│       ├── config/                   # Environment configs
-│       ├── interface/                # TypeScript interfaces
-│       ├── lib/                      # Base classes, SQLite DB
-│       ├── service/                  # Data access layer
-│       └── utils/                    # Linked list, constants
-├── docker/                    # Docker Compose files
-├── database/                  # SQL migration files
-├── docs/                      # Documentation
-├── CLAUDE.md                  # AI coding assistant guidelines
-└── README.md
-```
+1. Open the game and navigate to **AI Config**
+2. Enter your LLM API Key and URL (supports OpenAI, MiniMax, and custom endpoints)
+3. Set the model name (e.g., `gpt-4o`, `MiniMax-M2.7`)
+4. Create a room with **Enable AI** checked
+5. Toggle **PokerSkill** ON for full strategy, OFF for baseline
 
 ## Testing
 
+### E2E Tests
+
 ```bash
-cd server
-
-# Run all tests
-yarn test
-
-# Run specific test
-yarn test -- test/app/core/pokerGame.test.ts
-
-# Coverage report
-yarn cov
+cd server/src/test
+python pokerskill_integration_test.py
 ```
 
-## Card Encoding
+**Results**: 140/140 tests passed covering:
+- 5-layer architecture validation (P1-P5 activation rules)
+- A/B toggle (baseline vs PokerSkill mode)
+- Hand tier classification (11 hand types)
+- Position detection (Dealer/SB/BB)
+- Backend code static analysis (60 checkpoints)
+- Frontend integration points (18 checks)
+- End-to-end data flow (14 checks)
+- API endpoint mapping (7 endpoints)
+- PokerSkill Advisor integration (9 checks)
 
-The project uses a 2-character encoding for cards:
+### UI Tests
 
-| Character | Rank | Character | Suit |
-|-----------|------|-----------|------|
-| `a` | 2 | `1` | ♦ Diamond |
-| `b` | 3 | `2` | ♣ Club |
-| `c` | 4 | `3` | ♥ Heart |
-| `d` | 5 | `4` | ♠ Spade |
-| `e` | 6 | | |
-| `f` | 7 | | |
-| `g` | 8 | | |
-| `h` | 9 | | |
-| `i` | T (10) | | |
-| `j` | J | | |
-| `k` | Q | | |
-| `l` | K | | |
-| `m` | A | | |
+```bash
+cd client
+python e2e-test.py
+```
 
-Example: `m4` = A♠ (Ace of Spades), `a1` = 2♦ (Two of Diamonds)
+**Results**: 60/60 tests passed covering CSS design system, Vue component quality, visual consistency, interaction logic, and responsive design.
 
-## Tech Stack
+## Design System
 
-| Layer | Technology |
-|-------|-----------|
-| **Backend** | Midway.js 3.x, Egg.js 2.x, TypeScript 4.8 |
-| **Frontend** | Vue 3, Vue CLI, TypeScript |
-| **Real-time** | Socket.IO (egg-socket.io) |
-| **Database** | SQLite (via `sqlite3`), MySQL (optional) |
-| **Cache** | Redis |
-| **Auth** | JWT (egg-jwt) |
-| **AI** | LLM API (OpenAI/Claude compatible) + PokerSkill |
+### Color Palette
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--bg-primary` | `#0a3d28` | Main background |
+| `--felt-center` | `#116b47` | Table center |
+| `--felt-edge` | `#062a1c` | Table edge |
+| `--accent-gold` | `#d4af37` | Buttons, highlights |
+| `--accent-red` | `#e74c3c` | Fold action |
+| `--accent-green` | `#27ae60` | Check/Call action |
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT
 
-## Acknowledgments
+## Reference
 
-- PokerSkill framework based on research by Li, Wang & Huang (Tsinghua University, 2026)
-- Original TexasPokerGame by [yujunhui](https://github.com/yujunhui/TexasPokerGame)
-- Built with [Midway.js](https://midwayjs.org) and [Egg.js](https://eggjs.org)
+PokerSkill framework is inspired by the research on LLM-powered expert-level poker play.

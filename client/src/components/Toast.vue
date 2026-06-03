@@ -1,7 +1,8 @@
 <template>
   <div class="toast-container">
     <div class="toast-body" v-show="showValue">
-      {{ text }}
+      <span class="toast-icon">&#x1F4AC;</span>
+      <span class="toast-text">{{ text }}</span>
     </div>
   </div>
 </template>
@@ -44,17 +45,33 @@ export default class Toast extends Vue {
 <style scoped lang="less">
 .toast-container {
   .toast-body {
-    padding: 4px 10px;
-    background: rgba(0, 0, 0, 0.6);
+    padding: 12px 20px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
     text-align: center;
-    color: #fff;
-    font-size: 12px;
+    color: var(--text-primary);
+    font-size: 14px;
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate3d(-50%, -50%, 0);
-    border-radius: 4px;
-    line-height: 16px;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 280px;
+
+    .toast-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .toast-text {
+      font-weight: 500;
+    }
   }
 }
 </style>
