@@ -9,6 +9,7 @@ import { ILinkNode, Link } from '../../../utils/Link';
 import { Online, OnlineAction, P2PAction } from '../../../utils/constant';
 import { IPlayer } from '../../core/Player';
 import { EGameStatus, PokerGame } from '../../core/PokerGame';
+import { BotManager, BotPlayer, BotRoomConfig } from '../../core/BotManager';
 
 class GameController extends BaseSocketController {
   private async getSitDownPlayer(roomInfo: IRoomInfo): Promise<IPlayer[]> {
@@ -79,6 +80,48 @@ class GameController extends BaseSocketController {
       const PlayerService = await this.app.applicationContext.getAsync('PlayerRecordService');
       const sitDownPlayer = await this.getSitDownPlayer(roomInfo);
       console.log('roomConfig-------------------', roomInfo.config);
+
+      // === Bot Integration ===
+      // Initialize BotManager if bots are enabled
+      let botManager: BotManager | null = null;
+      if (roomInfo.config.enableBots && !roomInfo.botManager) {
+        const botConfig: BotRoomConfig = {
+          ...roomInfo.config,
+          enableBots: roomInfo.config.enableBots,
+          botCount: roomInfo.config.botCount || 1,
+          enablePokerSkill: roomInfo.config.enablePokerSkill !== false,
+          llmApiUrl: roomInfo.config.llmApiUrl || process.env.LLM_API_URL,
+          llmApiKey: roomInfo.config.llmApiKey || process.env.LLM_API_KEY,
+          llmModel: roomInfo.config.llmModel || process.env.LLM_MODEL || 'gpt-4o',
+          botChips: roomInfo.config.botChips || 1000,
+        };
+        botManager = new BotManager(botConfig);
+        botManager.initPokerSkill();
+        roomInfo.botManager = botManager;
+
+        // Create bot players and add to sitDownPlayer
+        const bots = botManager.createBots(
+          botConfig.botCount || 1,
+          botConfig.botChips || 1000,
+        );
+        console.log(`Created ${bots.length} bot player(s):`, bots.map(b => b.nickName));
+
+        // Add bots to roomInfo.players for tracking
+        for (const bot of bots) {
+          roomInfo.players.push(bot);
+        }
+
+        // Add bots to sitDownPlayer so they participate in the game
+        sitDownPlayer.push(...bots);
+      } else if (roomInfo.botManager) {
+        botManager = roomInfo.botManager;
+        // Re-add existing bots to sitDownPlayer if they have chips
+        const existingBots = botManager.getBots().filter(b => b.counter > 0);
+        if (existingBots.length > 0) {
+          sitDownPlayer.push(...existingBots);
+        }
+      }
+      // === End Bot Integration ===
       if (!roomInfo.game) {
         roomInfo.game = null;
         roomInfo.game = new PokerGame({
@@ -193,6 +236,35 @@ class GameController extends BaseSocketController {
             this.saveFullRecordAndClean(this.roomNumber);
           },
           autoActionCallBack: async (command, userId) => {
+            // Check if this is a bot - if so, use PokerSkill instead of folding
+            const botManager = roomInfo.botManager;
+            if (botManager && botManager.isBot(userId) && roomInfo.game) {
+              console.log(`Bot ${userId} turn triggered via timeout, getting PokerSkill action...`);
+              try {
+                const botPlayer = roomInfo.game.allPlayer.find(p => p.userId === userId);
+                if (botPlayer && roomInfo.game.status < EGameStatus.GAME_SHOWDOWN) {
+                  const botCommand = await botManager.getBotAction(roomInfo.game, botPlayer, roomInfo);
+                  console.log(`Bot ${userId} action: ${botCommand}`);
+                  // Execute bot action
+                  roomInfo.game.action(botCommand);
+                  // Broadcast the bot's action
+                  this.adapter(Online, OnlineAction.LatestAction, {
+                    latestAction: botCommand,
+                    userId,
+                    nickName: botPlayer.nickName,
+                  });
+                  this.updateFullRecord(botCommand);
+                  this.updateGameInfo();
+                  // Check if next player is also a bot (chain)
+                  await this.triggerBotActionIfNeeded(roomInfo);
+                  return;
+                }
+              } catch (e: any) {
+                console.error(`Bot ${userId} action error:`, e.message);
+              }
+            }
+
+            // Default behavior (human timeout or bot fallback): fold
             // fold change status: -1
             if (command === 'fold') {
               roomInfo.players.forEach((p) => {
@@ -218,6 +290,19 @@ class GameController extends BaseSocketController {
         if (xhr) {
           this.adapter(Online, OnlineAction.FirstGame, {});
         }
+
+        // === Trigger first bot action if UTG is a bot ===
+        if (botManager && roomInfo.game.currPlayer?.node) {
+          const firstPlayer = roomInfo.game.currPlayer.node;
+          if (botManager.isBot(firstPlayer.userId)) {
+            console.log(`First player is bot ${firstPlayer.nickName}, triggering immediately...`);
+            // Short delay then trigger bot chain
+            setTimeout(async () => {
+              await this.triggerBotActionIfNeeded(roomInfo);
+            }, 1000);
+          }
+        }
+        // === End first bot trigger ===
         // update counter, pot, status
         this.updateGameInfo();
         // add game record
@@ -362,10 +447,6 @@ class GameController extends BaseSocketController {
       console.log(userInfo, 'userInfo------', player);
       const isGaming = !!roomInfo.game;
       if (player) {
-        // buyin limit, must greater than big blind
-        // if (player.counter > roomInfo.config.smallBlind * 2) {
-        //   return;
-        // }
         if (roomInfo.game) {
           const inTheGame = roomInfo.game.allPlayer.find((p) => p.userId === userInfo.userId);
           // player in the game, can't buy in
@@ -555,12 +636,11 @@ class GameController extends BaseSocketController {
     }
   }
 
-  async showCard(){
+  async showCard() {
     const { payload } = this.message;
     const userInfo: IPlayer = await this.getUserInfo();
     const roomInfo = await this.getRoomInfo();
     const handCard = payload.handCard;
-    //log还需要显示出roomInfo.gameId
     console.log('showCard: ', roomInfo.gameId, userInfo.userId, handCard);
     this.adapter(Online, OnlineAction.ShowCard, {
       handCard,
@@ -568,6 +648,104 @@ class GameController extends BaseSocketController {
       nickName: userInfo.nickName,
       userId: payload.userId,
     });
+  }
+
+  /**
+   * Check if current player is a bot and trigger its action automatically.
+   * Chains through consecutive bot players.
+   */
+  private async triggerBotActionIfNeeded(roomInfo: IRoomInfo): Promise<void> {
+    const botManager = roomInfo.botManager;
+    if (!botManager || !roomInfo.game) return;
+
+    // Safety: maximum chain length to prevent infinite loops
+    const maxChain = 10;
+    let chainCount = 0;
+
+    while (
+      roomInfo.game &&
+      roomInfo.game.status < EGameStatus.GAME_SHOWDOWN &&
+      roomInfo.game.playerSize > 1 &&
+      chainCount < maxChain
+    ) {
+      const currPlayer = roomInfo.game.currPlayer?.node;
+      if (!currPlayer) break;
+
+      const userId = currPlayer.userId;
+      if (!botManager.isBot(userId)) break; // Not a bot, stop chain
+
+      chainCount++;
+      console.log(`[Bot Chain #${chainCount}] Triggering bot action for ${currPlayer.nickName} (${userId})`);
+
+      try {
+        // Small delay for visual feedback
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        const botCommand = await botManager.getBotAction(roomInfo.game, currPlayer, roomInfo);
+        console.log(`[Bot Chain #${chainCount}] ${currPlayer.nickName} action: ${botCommand}`);
+
+        // Broadcast bot action
+        this.adapter(Online, OnlineAction.LatestAction, {
+          latestAction: botCommand,
+          userId,
+          nickName: currPlayer.nickName,
+        });
+
+        // Record command
+        const commonCard = roomInfo.game.commonCard;
+        let status = 0;
+        if (commonCard.length === 3) status = EGameStatus.GAME_FLOP;
+        if (commonCard.length === 4) status = EGameStatus.GAME_TURN;
+        if (commonCard.length === 5) status = EGameStatus.GAME_RIVER;
+        if (commonCard.length === 6) status = EGameStatus.GAME_SHOWDOWN;
+
+        const commandRecord: ICommandRecord = {
+          roomNumber: this.roomNumber,
+          userId,
+          type: currPlayer.type,
+          gameStatus: status,
+          pot: 0,
+          commonCard: roomInfo.game?.commonCard.join(',') || '',
+          command: botCommand,
+          gameId: roomInfo.gameId || 0,
+          counter: currPlayer.counter,
+        };
+
+        // Execute action
+        currPlayer.updateVPIP((botCommand.split(':')[0] as any), commonCard.length);
+        this.updateFullRecord(botCommand);
+        roomInfo.game.action(botCommand);
+
+        // Handle fold status
+        const cmd = botCommand.split(':')[0];
+        if (cmd === 'fold') {
+          roomInfo.players.forEach((p) => {
+            if (p.userId === userId) p.status = -1;
+          });
+        }
+
+        this.updateGameInfo();
+
+        // Record command
+        const commandRecordService = await this.app.applicationContext.getAsync('CommandRecordService');
+        commandRecord.pot = roomInfo.game?.pot || 0;
+        commandRecord.counter = currPlayer.counter;
+        await commandRecordService.add(commandRecord);
+
+      } catch (e: any) {
+        console.error(`[Bot Chain] Error for ${currPlayer.nickName}:`, e.message);
+        // On error, fold the bot to unblock the game
+        if (roomInfo.game && roomInfo.game.status < EGameStatus.GAME_SHOWDOWN) {
+          roomInfo.game.action('fold');
+          this.updateGameInfo();
+        }
+        break;
+      }
+    }
+
+    if (chainCount >= maxChain) {
+      console.warn('[Bot Chain] Max chain length reached, stopping.');
+    }
   }
 
   async action() {
@@ -627,6 +805,11 @@ class GameController extends BaseSocketController {
         // todo notice next player action
         this.updateGameInfo();
         console.log('curr player', roomInfo.game.currPlayer.node);
+
+        // === Bot Auto-Action Trigger ===
+        // If next player is a bot, trigger its action automatically
+        await this.triggerBotActionIfNeeded(roomInfo);
+        // === End Bot Auto-Action ===
         // add game record
         commandRecord.pot = roomInfo.game?.pot || 0;
         commandRecord.counter = currPlayer.counter;
