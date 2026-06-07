@@ -81,14 +81,6 @@
         <div class="ai-config-body">
           <h1>AI Configuration</h1>
           <div class="ai-config-field">
-            <label>Quick Setup</label>
-            <div class="preset-btns">
-              <button class="preset-btn" :class="{ active: activePreset === 'minimax' }" @click="applyPreset('minimax')">MiniMax M2.7</button>
-              <button class="preset-btn" :class="{ active: activePreset === 'haihub' }" @click="applyPreset('haihub')">HaiHub Kimi-K2.5</button>
-              <button class="preset-btn" :class="{ active: activePreset === 'custom' }" @click="applyPreset('custom')">Custom</button>
-            </div>
-          </div>
-          <div class="ai-config-field">
             <label>Saved Configs</label>
             <div class="config-selector">
               <select v-model="selectedConfigId" @change="onSelectConfig">
@@ -106,20 +98,8 @@
             <input type="text" v-model="aiConfigName" placeholder="Config name" />
           </div>
           <div class="ai-config-field">
-            <label>API URL</label>
-            <input type="text" v-model="aiApiUrl" placeholder="https://api.minimaxi.com/v1/chat/completions" />
-          </div>
-          <div class="ai-config-field">
             <label>API Key</label>
-            <input type="password" v-model="aiApiKey" placeholder="Enter your API key" />
-          </div>
-          <div class="ai-config-field">
-            <label>Model</label>
-            <input type="text" v-model="aiModel" placeholder="Model name" />
-          </div>
-          <div class="ai-config-field">
-            <label>Agent Style <span class="char-count">({{ agentPrompt.length }}/300)</span></label>
-            <textarea v-model="agentPrompt" placeholder="Describe your AI advisor's style... (max 100 tokens)" maxlength="300" rows="3"></textarea>
+            <input type="password" v-model="aiApiKey" placeholder="Enter your DeepSeek API key" />
           </div>
           <div class="ai-config-field">
             <label class="checkbox-label">
@@ -236,19 +216,19 @@ export default class Home extends Vue {
   public selectedConfigId: number | null = null;
   public aiConfigName = '';
   public aiApiKey = '';
-  public aiApiUrl = 'https://api.minimaxi.com/v1/chat/completions';
-  public aiModel = 'MiniMax-M2.7';
+  public aiApiUrl = 'https://api.deepseek.com/v1/chat/completions';
+  public aiModel = 'deepseek-v4-flash';
   public activePreset = 'custom';
   public agentPrompt = '';
   public aiIsDefault = false;
 
-  // Bot / PokerSkill Config
+  // Bot / PokerSkill Config (defaults to DeepSeek)
   public enableBots = false;
   public botCount = 2;
   public enablePokerSkill = true;
-  public botLlmApiUrl = '';
-  public botLlmApiKey = '';
-  public botLlmModel = 'gpt-4o';
+  public botLlmApiUrl = 'https://api.deepseek.com/v1/chat/completions';
+  public botLlmApiKey = 'sk-34c10960629441a9b7d0a1ba3ee6c3f5';
+  public botLlmModel = 'deepseek-v4-flash';
   public botChips = 1000;
 
   public aiTesting = false;
@@ -256,15 +236,10 @@ export default class Home extends Vue {
   public aiTestMessage = '';
 
   private static PRESETS: Record<string, { url: string; key: string; model: string }> = {
-    minimax: {
-      url: 'https://api.minimaxi.com/v1/chat/completions',
+    deepseek: {
+      url: 'https://api.deepseek.com/v1/chat/completions',
       key: '',
-      model: 'MiniMax-M2.7',
-    },
-    haihub: {
-      url: 'https://api.model.haihub.cn/v1/chat/completions',
-      key: '',
-      model: 'Kimi-K2.5',
+      model: 'deepseek-v4-flash',
     },
   };
 
@@ -322,8 +297,8 @@ export default class Home extends Vue {
     this.selectedConfigId = null;
     this.aiConfigName = '';
     this.aiApiKey = '';
-    this.aiApiUrl = 'https://api.minimaxi.com/v1/chat/completions';
-    this.aiModel = 'MiniMax-M2.7';
+    this.aiApiUrl = 'https://api.deepseek.com/v1/chat/completions';
+    this.aiModel = 'deepseek-v4-flash';
     this.agentPrompt = '';
     this.aiIsDefault = false;
     this.activePreset = 'custom';
@@ -389,9 +364,9 @@ export default class Home extends Vue {
   }
 
   public async testAIConfig() {
-    if (!this.aiApiKey || !this.aiApiUrl || !this.aiModel) {
+    if (!this.aiApiKey) {
       this.aiTestStatus = 'fail';
-      this.aiTestMessage = 'All fields are required';
+      this.aiTestMessage = 'API Key is required';
       return;
     }
     this.aiTesting = true;
@@ -477,10 +452,8 @@ export default class Home extends Vue {
   }
 
   public async saveAIConfig() {
-    const sanitized = sanitizeUserPrompt(this.agentPrompt);
-    this.agentPrompt = sanitized;
-    if (!this.aiConfigName || !this.aiApiUrl || !this.aiApiKey) {
-      this.$plugin && this.$plugin.toast('Name, API URL and API Key are required');
+    if (!this.aiConfigName || !this.aiApiKey) {
+      this.$plugin && this.$plugin.toast('Name and API Key are required');
       return;
     }
     const payload = {
@@ -488,7 +461,7 @@ export default class Home extends Vue {
       apiUrl: this.aiApiUrl,
       apiKey: this.aiApiKey,
       model: this.aiModel,
-      agentPrompt: sanitized,
+      agentPrompt: '',
       isDefault: this.aiIsDefault,
     };
     try {
@@ -653,11 +626,15 @@ export default class Home extends Vue {
   }
 
   .room-config {
-    position: absolute;
+    position: fixed;
     width: 100vw;
     height: 100vh;
     top: 0;
     left: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     .room-config-shadow {
       position: fixed;
       left: 0; right: 0; bottom: 0; top: 0;
@@ -665,10 +642,8 @@ export default class Home extends Vue {
       background-color: rgba(0, 0, 0, 0.5);
     }
     .room-config-body {
-      position: absolute;
-      left: 50%; top: 50%;
+      position: relative;
       z-index: 99;
-      transform: translate3d(-50%, -50%, 0);
       background: var(--bg-card);
       border: 1px solid var(--border-medium);
       box-shadow: var(--shadow-lg);
@@ -763,11 +738,15 @@ export default class Home extends Vue {
 
   // AI Config Panel
   .ai-config {
-    position: absolute;
+    position: fixed;
     width: 100vw;
     height: 100vh;
     top: 0;
     left: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     .ai-config-shadow {
       position: fixed;
       left: 0; right: 0; bottom: 0; top: 0;
@@ -775,16 +754,14 @@ export default class Home extends Vue {
       background-color: rgba(0, 0, 0, 0.5);
     }
     .ai-config-body {
-      position: absolute;
+      position: relative;
       background: linear-gradient(145deg, #0d2e1e, #0a3d28);
       border: 1px solid rgba(212, 175, 55, 0.3);
       border-radius: 12px;
-      left: 50%; top: 50%;
       z-index: 99;
       width: 380px;
       max-height: 90vh;
       overflow-y: auto;
-      transform: translate3d(-50%, -50%, 0);
       padding: 20px 24px;
       backdrop-filter: blur(12px);
       h1 {

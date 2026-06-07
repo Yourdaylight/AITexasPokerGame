@@ -831,12 +831,14 @@ export default class Game extends Vue {
   }
 
   public play() {
-    if (this.players.length >= 2) {
+    // Count seated players (players who have actually sat down)
+    const seatedPlayers = this.sitList.filter((s) => s.player && s.player.userId);
+    if (seatedPlayers.length >= 2) {
       this.gaming = true;
       this.emit('playGame');
     } else {
-      this.$plugin.toast("no enough player");
-      console.log('no enough player');
+      this.$plugin.toast("至少需要2人就座才能开始游戏");
+      console.log('no enough seated players');
     }
   }
 

@@ -2,6 +2,12 @@ module.exports = {
   publicPath: process.env.VUE_APP_PUBLIC_PATH || '/',
   devServer: {
     disableHostCheck: true,
+    proxy: {
+      '/node': {
+        target: 'http://127.0.0.1:5002',
+        changeOrigin: true,
+      },
+    },
   },
   productionSourceMap: false,
   configureWebpack: {

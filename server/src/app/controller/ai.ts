@@ -530,7 +530,10 @@ export class AIController extends BaseController {
                 }
                 try {
                   const data = JSON.parse(dataStr);
-                  const delta: string = data.choices?.[0]?.delta?.content || '';
+                  const choice = data.choices?.[0];
+                  const deltaObj = choice?.delta || {};
+                  // Support both standard content and DeepSeek reasoning_content
+                  let delta: string = deltaObj.content || deltaObj.reasoning_content || '';
                   if (!delta) continue;
                   if (delta.includes('<think>')) { inThinking = true; }
                   if (inThinking) {
@@ -633,10 +636,14 @@ export class AIController extends BaseController {
       const { body } = this.getRequestBody();
       const { name, apiUrl, apiKey, model, agentPrompt, isDefault } = body;
 
-      if (!name || !apiUrl || !apiKey) {
-        this.fail('Name, API URL and API Key are required');
+      if (!name || !apiKey) {
+        this.fail('Name and API Key are required');
         return;
       }
+
+      // Auto-fill DeepSeek defaults if not provided
+      const finalApiUrl = apiUrl || 'https://api.deepseek.com/v1/chat/completions';
+      const finalModel = model || 'deepseek-v4-flash';
 
       // If setting as default, unset other defaults
       if (isDefault) {
@@ -651,7 +658,7 @@ export class AIController extends BaseController {
       const result = await new Promise<any>((resolve, reject) => {
         db.run(
           'INSERT INTO ai_config (user_id, name, api_url, api_key, model, agent_prompt, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [userId, name, apiUrl, apiKey, model || 'MiniMax-M2.7', agentPrompt || '', isDefault ? 1 : 0],
+          [userId, name, finalApiUrl, apiKey, finalModel, agentPrompt || '', isDefault ? 1 : 0],
           function(err: any) {
             if (err) reject(err);
             else resolve({ id: this.lastID });
@@ -684,6 +691,10 @@ export class AIController extends BaseController {
       const { body } = this.getRequestBody();
       const { name, apiUrl, apiKey, model, agentPrompt, isDefault } = body;
 
+      // Auto-fill DeepSeek defaults if not provided
+      const finalApiUrl = apiUrl || 'https://api.deepseek.com/v1/chat/completions';
+      const finalModel = model || 'deepseek-v4-flash';
+
       const existing = await new Promise<any>((resolve, reject) => {
         db.get('SELECT id FROM ai_config WHERE id = ? AND user_id = ?', [configId, userId], (err: any, row: any) => {
           if (err) reject(err);
@@ -709,7 +720,7 @@ export class AIController extends BaseController {
       await new Promise<void>((resolve, reject) => {
         db.run(
           'UPDATE ai_config SET name = ?, api_url = ?, api_key = ?, model = ?, agent_prompt = ?, is_default = ?, update_time = CURRENT_TIMESTAMP WHERE id = ?',
-          [name, apiUrl, apiKey, model || 'MiniMax-M2.7', agentPrompt || '', isDefault ? 1 : 0, configId],
+          [name, finalApiUrl, apiKey, finalModel, agentPrompt || '', isDefault ? 1 : 0, configId],
           (err: any) => {
             if (err) reject(err);
             else resolve();
@@ -750,6 +761,175 @@ export class AIController extends BaseController {
     } catch (e: any) {
       this.ctx.logger.error('AI config delete error:', e);
       this.fail('Failed to delete AI config');
+    }
+  }
+
+  // ==========================================
+  // AI Conversation History APIs
+  // ==========================================
+
+  /**
+   * GET /node/ai/conversation
+   * Get conversation list for current user (latest 100)
+   */
+  @Get('/conversation')
+  async getConversations() {
+    try {
+      const user = (this.ctx as any).state.user;
+      const userId = user?.user?.userId;
+      if (!userId) {
+        this.fail('Unauthorized');
+        return;
+      }
+
+      const conversations = await new Promise<any[]>((resolve, reject) => {
+        db.all(
+          'SELECT id, room_id, game_id, hand_card, common_card, stage, title, create_time, update_time FROM ai_conversation WHERE user_id = ? ORDER BY update_time DESC LIMIT 100',
+          [userId],
+          (err: any, rows: any[]) => {
+            if (err) reject(err);
+            else resolve(rows || []);
+          }
+        );
+      });
+
+      this.success(conversations);
+    } catch (e: any) {
+      this.ctx.logger.error('AI conversation get error:', e);
+      this.fail('Failed to get conversations');
+    }
+  }
+
+  /**
+   * GET /node/ai/conversation/:id
+   * Get single conversation messages
+   */
+  @Get('/conversation/:id')
+  async getConversationDetail() {
+    try {
+      const user = (this.ctx as any).state.user;
+      const userId = user?.user?.userId;
+      if (!userId) {
+        this.fail('Unauthorized');
+        return;
+      }
+
+      const convId = this.ctx.params.id;
+      const conversation = await new Promise<any>((resolve, reject) => {
+        db.get(
+          'SELECT id, room_id, game_id, hand_card, common_card, stage, title, messages, create_time, update_time FROM ai_conversation WHERE id = ? AND user_id = ?',
+          [convId, userId],
+          (err: any, row: any) => {
+            if (err) reject(err);
+            else resolve(row || null);
+          }
+        );
+      });
+
+      if (!conversation) {
+        this.fail('Conversation not found');
+        return;
+      }
+
+      try {
+        conversation.messages = JSON.parse(conversation.messages || '[]');
+      } catch (e) {
+        conversation.messages = [];
+      }
+
+      this.success(conversation);
+    } catch (e: any) {
+      this.ctx.logger.error('AI conversation detail error:', e);
+      this.fail('Failed to get conversation');
+    }
+  }
+
+  /**
+   * POST /node/ai/conversation
+   * Create or update a conversation
+   */
+  @Post('/conversation')
+  async saveConversation() {
+    try {
+      const user = (this.ctx as any).state.user;
+      const userId = user?.user?.userId;
+      if (!userId) {
+        this.fail('Unauthorized');
+        return;
+      }
+
+      const { body } = this.getRequestBody();
+      const { id, roomId, gameId, handCard, commonCard, stage, title, messages } = body;
+
+      if (!messages || !Array.isArray(messages)) {
+        this.fail('Messages array is required');
+        return;
+      }
+
+      const messagesJson = JSON.stringify(messages);
+      const handCardStr = Array.isArray(handCard) ? handCard.join(',') : (handCard || '');
+      const commonCardStr = Array.isArray(commonCard) ? commonCard.join(',') : (commonCard || '');
+      const titleStr = title || `${stage || 'unknown'} - ${handCardStr}`;
+
+      if (id) {
+        // Update existing
+        await new Promise<void>((resolve, reject) => {
+          db.run(
+            'UPDATE ai_conversation SET room_id = ?, game_id = ?, hand_card = ?, common_card = ?, stage = ?, title = ?, messages = ?, update_time = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+            [roomId || '', gameId || 0, handCardStr, commonCardStr, stage || '', titleStr, messagesJson, id, userId],
+            (err: any) => {
+              if (err) reject(err);
+              else resolve();
+            }
+          );
+        });
+        this.success({ id });
+      } else {
+        // Create new
+        const result = await new Promise<any>((resolve, reject) => {
+          db.run(
+            'INSERT INTO ai_conversation (user_id, room_id, game_id, hand_card, common_card, stage, title, messages) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [userId, roomId || '', gameId || 0, handCardStr, commonCardStr, stage || '', titleStr, messagesJson],
+            function(err: any) {
+              if (err) reject(err);
+              else resolve({ id: this.lastID });
+            }
+          );
+        });
+        this.success({ id: result.id });
+      }
+    } catch (e: any) {
+      this.ctx.logger.error('AI conversation save error:', e);
+      this.fail('Failed to save conversation');
+    }
+  }
+
+  /**
+   * DELETE /node/ai/conversation/:id
+   * Delete a conversation
+   */
+  @Del('/conversation/:id')
+  async deleteConversation() {
+    try {
+      const user = (this.ctx as any).state.user;
+      const userId = user?.user?.userId;
+      if (!userId) {
+        this.fail('Unauthorized');
+        return;
+      }
+
+      const convId = this.ctx.params.id;
+      await new Promise<void>((resolve, reject) => {
+        db.run('DELETE FROM ai_conversation WHERE id = ? AND user_id = ?', [convId, userId], (err: any) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      this.success({ id: convId });
+    } catch (e: any) {
+      this.ctx.logger.error('AI conversation delete error:', e);
+      this.fail('Failed to delete conversation');
     }
   }
 }

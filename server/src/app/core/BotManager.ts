@@ -10,7 +10,7 @@
 import { IPlayer, ECommand } from './Player';
 import { PokerGame, EGameStatus } from './PokerGame';
 import { PokerSkillBot, GameStateForBot, PokerSkillConfig, BotPlayerInfo } from './PokerSkillBot';
-import { IRoomInfo, ISit, IRoomConfig } from '../../../interface/IGameRoom';
+import { IRoomInfo, ISit, IRoomConfig } from '../../interface/IGameRoom';
 
 /** Extended room config for bot support */
 export interface BotRoomConfig extends IRoomConfig {
@@ -172,7 +172,7 @@ export class BotManager {
     const players: BotPlayerInfo[] = [];
     for (const p of game.allPlayer) {
       if (p.userId === botPlayer.userId) continue;
-      const roomPlayer = roomInfo.players.find(rp => rp.userId === p.userId);
+      const roomPlayer = roomInfo.players.find((rp: IPlayer) => rp.userId === p.userId);
       const vpip = roomPlayer
         ? (roomPlayer.voluntaryActionCountAtPreFlop || 0) /
           ((roomPlayer.actionCountAtPreFlop || 0) - (roomPlayer.walksCountAtPreFlop || 0) || 1)

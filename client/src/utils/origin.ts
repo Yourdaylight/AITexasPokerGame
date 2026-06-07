@@ -3,8 +3,10 @@ const getUrls = () => {
     return [window.location.origin];
   }
 
-  const baseUrl = 'http://' + (process.env.VUE_APP_API_IP || '127.0.0.1');
-  const port = process.env.VUE_APP_API_PORT || 5002;
+  // Use current host for API when accessed via LAN/IP, fallback to localhost for direct dev
+  const currentHost = window.location.hostname;
+  const baseUrl = 'http://' + (process.env.VUE_APP_API_IP || currentHost);
+  const port = process.env.VUE_APP_API_PORT || '5002';
   const urls = [`${baseUrl}:${port}`];
   return urls;
 };

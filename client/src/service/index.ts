@@ -146,6 +146,7 @@ export default {
   getAIAdvisor: (data: any, onMessage: (chunk: string) => void, onError: (err: string) => void, onClose: () => void) => {
     const token = cookie.get('token') || localStorage.getItem('token');
     const url = `${origin.urls[0]}/node/ai/advisor`;
+    console.log('[AI-Advisor][service] fetch start', url);
     fetch(url, {
       method: 'POST',
       headers: {
@@ -153,33 +154,61 @@ export default {
         'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify(data),
-    }).then(response => {
+    }).then(async response => {
+      console.log('[AI-Advisor][service] response status', response.status, 'ok', response.ok);
+      console.log('[AI-Advisor][service] content-type', response.headers.get('content-type'));
+      if (!response.ok) {
+        let errText = '';
+        try {
+          errText = await response.text();
+        } catch (e) { /* ignore */ }
+        console.error('[AI-Advisor][service] response not ok', response.status, errText);
+        onError(`HTTP ${response.status}: ${errText || response.statusText}`);
+        return;
+      }
       const reader = response.body?.getReader();
       if (!reader) { onError('No response body'); return; }
       const decoder = new TextDecoder();
       let buffer = '';
+      let closed = false;
+      const safeClose = () => {
+        if (closed) return;
+        closed = true;
+        console.log('[AI-Advisor][service] stream closed');
+        onClose();
+      };
       function read() {
         reader!.read().then(({ done, value }) => {
-          if (done) { onClose(); return; }
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed.startsWith('data:')) continue;
-            const jsonStr = trimmed.slice(5).trim();
-            if (jsonStr === '[DONE]') { onClose(); return; }
-            try {
-              const parsed = JSON.parse(jsonStr);
-              if (parsed.error) { onError(parsed.error); return; }
-              if (parsed.delta) onMessage(parsed.delta);
-            } catch (e) { /* skip non-JSON */ }
+          if (done) { safeClose(); return; }
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+          // SSE events are separated by double newlines
+          const parts = buffer.split('\n\n');
+          buffer = parts.pop() || '';
+          for (const block of parts) {
+            for (const line of block.split('\n')) {
+              const trimmed = line.trim();
+              if (!trimmed.startsWith('data:')) continue;
+              const jsonStr = trimmed.slice(5).trim();
+              if (jsonStr === '[DONE]') { safeClose(); return; }
+              try {
+                const parsed = JSON.parse(jsonStr);
+                if (parsed.error) { onError(parsed.error); return; }
+                if (parsed.delta) onMessage(parsed.delta);
+              } catch (e) { /* skip non-JSON */ }
+            }
           }
           read();
-        }).catch(err => { onError(err.message || 'Stream error'); });
+        }).catch(err => {
+          console.error('[AI-Advisor][service] read error', err);
+          onError(err.message || 'Stream error');
+        });
       }
       read();
-    }).catch(err => { onError(err.message || 'Request failed'); });
+    }).catch(err => {
+      console.error('[AI-Advisor][service] fetch error', err);
+      onError(err.message || 'Request failed');
+    });
   },
   compressAIContext: (data: any) =>
     request({
@@ -216,6 +245,31 @@ export default {
     request({
       method: 'DELETE',
       url: `/ai/config/${id}`,
+      body: {},
+    }),
+
+  // AI Conversation History
+  getAIConversations: () =>
+    request({
+      method: 'GET',
+      url: '/ai/conversation',
+      body: {},
+    }),
+  getAIConversationDetail: (id: number) =>
+    request({
+      method: 'GET',
+      url: `/ai/conversation/${id}`,
+      body: {},
+    }),
+  saveAIConversation: (data: any) =>
+    request({
+      url: '/ai/conversation',
+      body: data,
+    }),
+  deleteAIConversation: (id: number) =>
+    request({
+      method: 'DELETE',
+      url: `/ai/conversation/${id}`,
       body: {},
     }),
 };
