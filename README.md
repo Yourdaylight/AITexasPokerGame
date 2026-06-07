@@ -28,7 +28,7 @@ Dark green gradient background with glassmorphism login card, gold accent button
 
 ### 2. Home Screen
 
-![Home Screen](https://github.com/user-attachments/assets/home-screen)
+![Home Screen](docs/screenshot-home.png)
 
 Room creation, hot rooms list, quick access to game history and AI config.
 
@@ -57,10 +57,12 @@ Classic poker green felt table with:
 
 ### 5. AI Advisor with PokerSkill
 
-![AI Advisor](https://github.com/user-attachments/assets/ai-advisor)
+![AI Advisor](docs/screenshot-game-table.png)
 
 **NEW**: AI Advisor powered by PokerSkill 5-layer architecture:
-- **P5/P1 toggle**: Switch between full strategy and baseline mode
+- **🧠 ON/OFF toggle**: Switch between full strategy (P1-P5) and baseline mode (P1 only)
+- **Conversation History**: Auto-save per room, browse past analyses
+- **SSE Streaming**: Real-time streaming AI response with thinking process
 - **P2 - Preflop Range**: Hand tier classification (premium_pair, broadway, etc.) + position strategy
 - **P3 - Hand Strength**: Board analysis, pair/trips detection, pot odds
 - **P4 - Targeted Strategy**: Aggressive/defensive mode, bet sizing
@@ -117,7 +119,7 @@ Toggle `enablePokerSkill` to compare:
 ### Integration Points
 
 - **Backend**: `PokerSkillBot.ts` builds 5-layer prompts, `BotManager.ts` manages AI lifecycle
-- **Frontend**: `AIAdvisor.vue` displays PokerSkill analysis with P5/P1 toggle
+- **Frontend**: `AIAdvisor.vue` displays PokerSkill analysis with 🧠 ON/OFF toggle
 - **API**: `POST /node/ai/advisor` - PokerSkill-powered advisor endpoint
 - **Room Config**: Enable bots and PokerSkill when creating a room
 
